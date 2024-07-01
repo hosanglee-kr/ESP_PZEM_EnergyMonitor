@@ -1,0 +1,118 @@
+{
+    "name": "pzem-edl",
+    "frameworks": "arduino",
+    "platforms": ["espressif32"],
+    "version": "1.1.1",
+    "keywords": "peacefair, pzem, powermeter, pzem004t, pzem003, pzem-017, pzem-017",
+    "description": "PZEM event-driven library - an ESP32 Arduino/esp-idf library implementing communication interface for PeaceFair PZEM-004Tv3.0/PZEM-003 Energy monitor modules via Modbus-RTU proto",
+    "url": "https://github.com/vortigont/pzem-edl",
+    "authors": [
+        {
+            "name": "Emil Muratov",
+            "url": "https://github.com/vortigont",
+            "email": "gpm@hotplug.ru",
+            "maintainer": true
+        }
+    ],
+    "license": "GPL-3.0-or-later",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vortigont/pzem-edl.git"
+    },
+    "dependencies":
+    [
+         {"owner": "vortigont",
+          "name": "LinkedList",
+          "version": "https://github.com/vortigont/LinkedList"}
+    ],
+    "build": {
+        "flags": "-std=gnu++14",
+        "unflags": "-std=gnu++11"
+    },
+    "export": {
+        "include":
+        [
+            "examples/*",
+            "src/*",
+            "CHANGELOG.md",
+            "README.md",
+            "library.json",
+            "library.properties",
+            "LICENCE"
+        ]
+    },
+    "examples": [
+        {
+            "name": "Single PZEM004",
+            "base": "examples/01_SinglePZEM004",
+            "files": [
+                "platformio.ini",
+                "src/main.h",
+                "src/main.cpp",
+                "src/src.ino"
+            ]
+        },
+        {
+            "name": "Single PZEM003",
+            "base": "examples/02_SinglePZEM003",
+            "files": [
+                "platformio.ini",
+                "src/main.h",
+                "src/main.cpp",
+                "src/src.ino"
+            ]
+        },
+        {
+            "name": "Multiple PZEM004",
+            "base": "examples/03_MultiplePZEM004",
+            "files": [
+                "platformio.ini",
+                "src/main.h",
+                "src/main.cpp",
+                "src/src.ino"
+            ]
+        },
+        {
+            "name": "Mixed PZEM Pool",
+            "base": "examples/04_MixedPool",
+            "files": [
+                "platformio.ini",
+                "src/main.h",
+                "src/main.cpp",
+                "src/src.ino"
+            ]
+        },
+        {
+            "name": "Mixed PZEM Pool",
+            "base": "examples/05_TimeSeries",
+            "files": [
+                "platformio.ini",
+                "src/main.cpp",
+                "src/src.ino"
+            ]
+        },
+        {
+            "name": "PZEM CLI",
+            "base": "examples/pzem_cli",
+            "files": [
+                "platformio.ini",
+                "README.md",
+                "src/main.h",
+                "src/main.cpp",
+                "src/src.ino"
+            ]
+        },
+        {
+            "name": "esp-idf example",
+            "base": "examples/esp-idf",
+            "files": [
+                "CMakeLists.txt",
+                "platformio.ini",
+                "sdkconfig.wemos_d1_mini32",
+                "src/main.h",
+                "src/main.cpp",
+                "src/CMakeLists.txt"
+            ]
+        }
+    ]
+}
