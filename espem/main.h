@@ -32,8 +32,9 @@
 #ifndef NO_GLOBAL_UPDATE
     #define NO_GLOBAL_UPDATE
 #endif
-
-#define FZ_WITH_ASYNCSRV
+#ifndef FZ_WITH_ASYNCSRV
+  #define FZ_WITH_ASYNCSRV
+#endif
 
 // Sketch configuration
 #include "globals.h"    // EmbUI macro's for LOG
@@ -41,7 +42,9 @@
 #include "uistrings.h"  // non-localized text-strings
 #include <ESPAsyncWebServer.h>
 
-#define FZ_WITH_ASYNCSRV
+#ifndef FZ_WITH_ASYNCSRV
+  #define FZ_WITH_ASYNCSRV
+#endif
 
 #ifndef NO_GLOBAL_UPDATE
     #define NO_GLOBAL_UPDATE
