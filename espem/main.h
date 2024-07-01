@@ -29,8 +29,8 @@
 
 #define WEBUI_PUBLISH_INTERVAL  20
 
-#ifdef NO_GLOBAL_UPDATE
-    #undef NO_GLOBAL_UPDATE
+#ifndef NO_GLOBAL_UPDATE
+    #define NO_GLOBAL_UPDATE
 #endif
 
 // Sketch configuration
@@ -40,8 +40,8 @@
 #include <ESPAsyncWebServer.h>
 
 
-#ifdef NO_GLOBAL_UPDATE
-    #undef NO_GLOBAL_UPDATE
+#ifndef NO_GLOBAL_UPDATE
+    #define NO_GLOBAL_UPDATE
 #endif
 
 
