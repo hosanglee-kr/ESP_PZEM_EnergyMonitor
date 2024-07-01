@@ -33,12 +33,15 @@
     #define NO_GLOBAL_UPDATE
 #endif
 
+#define FZ_WITH_ASYNCSRV
+
 // Sketch configuration
 #include "globals.h"    // EmbUI macro's for LOG
 #include "config.h"
 #include "uistrings.h"  // non-localized text-strings
 #include <ESPAsyncWebServer.h>
 
+#define FZ_WITH_ASYNCSRV
 
 #ifndef NO_GLOBAL_UPDATE
     #define NO_GLOBAL_UPDATE
