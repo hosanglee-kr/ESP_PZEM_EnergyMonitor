@@ -29,11 +29,21 @@
 
 #define WEBUI_PUBLISH_INTERVAL  20
 
+#ifdef NO_GLOBAL_UPDATE
+    #undef NO_GLOBAL_UPDATE
+#endif
+
 // Sketch configuration
 #include "globals.h"    // EmbUI macro's for LOG
 #include "config.h"
 #include "uistrings.h"  // non-localized text-strings
 #include <ESPAsyncWebServer.h>
+
+
+#ifdef NO_GLOBAL_UPDATE
+    #undef NO_GLOBAL_UPDATE
+#endif
+
 
 // EMBUI
 void create_parameters();       // декларируем для переопределения weak метода из фреймворка для WebUI
