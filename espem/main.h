@@ -112,7 +112,9 @@ void setup() {
 
   }
 
-  embui.server.on("/fw", HTTP_GET, [](AsyncWebServerRequest *request){ wver(request); });
+  embui.server.on("/fw", HTTP_GET, [](AsyncWebServerRequest *request){ 
+      wver(request); 
+  });
 
   embui.setPubInterval(WEBUI_PUBLISH_INTERVAL);
 }
@@ -132,11 +134,11 @@ void wver(AsyncWebServerRequest *request) {
     ESP.getChipModel(),
     ESP.getFlashChipSize(),
     ESP.getSdkVersion(),
-#ifdef GIT_REV
-    GIT_REV,
-#else
-    "-",
-#endif
+    #ifdef GIT_REV
+        GIT_REV,
+    #else
+        "-",
+    #endif
     ESP.getCpuFreqMHz(),
     ESP.getHeapSize(), ESP.getFreeHeap(),      // RAM
     ESP.getPsramSize(), ESP.getFreePsram(),    // PSRAM
