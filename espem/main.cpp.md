@@ -6,6 +6,7 @@
  *
  */
 
+/*
 // Main headers
 #include "main.h"
 #include "espem.h"
@@ -90,3 +91,4 @@ void wver(AsyncWebServerRequest *request) {
   request->send(200, FPSTR(PGmimejson), buff );
 }
 //
+*/
