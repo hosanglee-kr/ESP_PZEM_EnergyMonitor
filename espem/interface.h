@@ -102,7 +102,7 @@ void block_menu(Interface *interf)
 void ui_frame_mkchart(Interface *interf)
 {
     interf->json_frame_jscall(C_mkchart);
-    StaticJsonDocument<128> doc;
+    JsonDocument doc;
     
     JsonObject params = doc.to<JsonObject>(); // parameters for charts
     params[P_id] = C_gsmini;
@@ -112,7 +112,11 @@ void ui_frame_mkchart(Interface *interf)
     if (ts)
         params["interval"] = ts->getInterval();
     params[C_scnt] = embui.paramVariant(V_SMPLCNT).as<int>(); // espem->ds.getTScap(power_chart_id);    // samples counter
-    interf->jobject(params, true);
+    
+    
+    interf->json_frame_add(params);
+    //// interf->jobject(params, true);
+
     interf->json_frame_flush(); // flush frame
 }
 

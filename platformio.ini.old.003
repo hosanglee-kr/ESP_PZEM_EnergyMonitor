@@ -1,0 +1,159 @@
+[platformio]
+	description       		= 	Firmware for ESP32 based boards to interface with PeaceFair PZEM PowerMeters
+	src_dir           		= 	espem
+	default_envs      		= 	espem
+	extra_configs     		=
+                        		user_*.ini
+
+[common]
+	board_build.filesystem  = 	littlefs
+	framework 				= 	arduino
+	lib_ldf_mode 			= 	deep+  ;chain+
+	;lib_ldf_mode  			= 	deep
+	build_flags 			=
+								-DFZ_WITH_ASYNCSRV
+								-D FZ_WITH_ASYNCSRV
+								-DNO_GLOBAL_UPDATE
+								-D NO_GLOBAL_UPDATE
+								;  -DCOUNTRY="ru"
+	build_src_flags 		=
+								!python flags.py
+								-std=gnu++17
+	src_build_unflags 		=
+								-std=gnu++11
+;	lib_deps 				=
+;								https://github.com/vortigont/EmbUI.git#v3.1.3
+;								https://github.com/bblanchon/ArduinoStreamUtils.git#v1.7.3
+;								./lib_pzem-edl_main
+	lib_ignore 				=
+;								ESPAsyncTCP
+;								https://github.com/bblanchon/ArduinoStreamUtils.git @ 1.8.0+sha.f99b7d7 
+	monitor_speed 			= 115200
+
+
+; debug flags
+[debug]
+	espem_serial 			=
+								-DESPEM_DEBUG=Serial
+	app_serial 				=
+								${debug.espem_serial}
+								-DEMBUI_DEBUG
+								-DEMBUI_DEBUG_PORT=Serial
+	all_serial 				=
+								${debug.app_serial}
+	-DDEBUG_ESP_PORT		=	Serial
+	core_serial 			=
+								-DCORE_DEBUG_LEVEL=3
+								-DLOG_LOCAL_LEVEL=ESP_LOG_INFO
+	espem_serial1 			=
+								-DESPEM_DEBUG=Serial1
+	app_serial1 			=
+								${debug.espem_serial1}
+								-DEMBUI_DEBUG
+								-DEMBUI_DEBUG_PORT=Serial1
+	all_serial1 			=
+								${debug.espem_serial1}
+								-DDEBUG_ESP_PORT=Serial1
+
+[esp32_base]
+	extends 				= 	common
+	platform 				= 	espressif32
+	board 					= 	wemos_d1_mini32
+
+	lib_archive 			= 	no
+	monitor_filters 		= 	esp32_exception_decoder
+	lib_deps 				=
+								./lib_pzem-edl_main
+								; https://github.com/hosanglee-kr/pzem-edl.git
+								; vortigont/pzem-edl @ ~1.0.0
+								; https://github.com/vortigont/pzem-edl
+								
+								https://github.com/hosanglee-kr/EmbUI.git
+	                                                         ; vortigont/EmbUI @ 3.2.1
+								; https://github.com/vortigont/EmbUI.git#v3.2.0
+								; https://github.com/bblanchon/ArduinoStreamUtils.git#v1.7.3
+
+								vortigont/esp32-flashz @ 1.1.5
+								; vortigont/esp32-flashz @ 1.1.4
+
+								mathieucarbou/ESP Async WebServer@^3.0.6
+
+	build_flags 			=
+								-DFZ_WITH_ASYNCSRV
+								-D FZ_WITH_ASYNCSRV
+								-DNO_GLOBAL_UPDATE
+								-D NO_GLOBAL_UPDATE
+								-DCOUNTRY="ru"
+								;-D BUILD_ENV=$PIOENV
+	lib_ignore 				=
+								ESPAsyncTCP
+								LITTLEFS
+								LittleFS_esp32
+								vortigont/esp32-flashz @ 1.1.5
+
+; ===== Build ENVs ======
+
+[env]
+	extends = common
+	;build_flags 			=
+								; -DCOUNTRY="ru"            // Country double-letter code, used for NTP pool selection
+								; -DNO_GLOBAL_SERIAL
+								; -DNO_GLOBAL_SERIAL1
+
+
+; ESP32 with PZEM EDL
+[env:espem]
+	extends 				= 	esp32_base
+	build_flags 			=  	${esp32_base.build_flags}
+        board_build.filesystem 		= littlefs
+
+	lib_deps 				=
+								${esp32_base.lib_deps}
+
+	lib_ignore				=
+								${esp32_base.lib_ignore}
+
+	;build_src_flags 		=
+								; ${common.build_src_flags}
+	;src_build_unflags 		=
+								; ${common.src_build_unflags}
+
+
+; ESP32 with PZEM EDL, debug enabled
+[env:espem_debug]
+	extends 				=	esp32_base
+	build_flags 			=
+								${esp32_base.build_flags}
+								${debug.app_serial}
+
+	lib_deps 				=
+								${esp32_base.lib_deps}
+
+
+; build pzem emulator
+[env:espem_dummy]
+	extends 				= 	esp32_base
+	build_flags 			=
+								${esp32_base.build_flags}
+								-DESPEM_DUMMY
+
+	lib_deps 				=
+								${esp32_base.lib_deps}
+
+
+
+
+; Over-the-air compressed update
+; copy this template into user_ota.ini file and replace URL with your device adddress
+;[espem_ota]
+	;extra_scripts 			=	post_flashz.py
+	;upload_protocol 		= 	custom
+	;upload_port 			=	http://espem/update
+	;upload_flags 			=	compress
+
+;[env:espem_s3]
+	;extends 				= 	esp32_base
+	;board 					= 	lolin_s3
+	;lib_deps 				=
+								; ${esp32_base.lib_deps}
+								; https://github.com/vortigont/pzem-edl
