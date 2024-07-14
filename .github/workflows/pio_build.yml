@@ -6,7 +6,7 @@ name: PlatformIO CI
 
 on:
   push:
-    branches: [ main, dev1 ]
+    branches: [ dev1 ] #[ main, dev1 ]
     paths:
       - '**.cpp'
       - '**.hpp'
