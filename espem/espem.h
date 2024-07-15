@@ -40,7 +40,7 @@ enum class mcstate_t {
 extern Scheduler ts;
 
 /////////////////
-void			 block_menu(Interface *interf);
+void block_menu(Interface *interf);
 ////////////////
 
 class DataStorage : public TSContainer<pz004::metrics> {
@@ -101,25 +101,25 @@ class Espem {
 		qport = nullptr;
 	}
 
-	bool	begin(const uart_port_t p, int rx = UART_PIN_NO_CHANGE, int tx = UART_PIN_NO_CHANGE);
+	bool begin(const uart_port_t p, int rx = UART_PIN_NO_CHANGE, int tx = UART_PIN_NO_CHANGE);
 
 	/** @brief onNetIfUp - коллбек для внешнего события "сеть доступна"
 	 *
 	 */
-	void	onNetIfUp();
+	void onNetIfUp();
 
 	/** @brief onNetIfDown - коллбек для внешнего события "сеть НЕ доступна"
 	 *
 	 */
-	void	onNetIfDown();
+	void onNetIfDown();
 
 	/**
 	 * @brief - HTTP request callback with latest polled data (as json)
 	 *
 	 */
-	void	wdatareply(AsyncWebServerRequest *request);
+	void wdatareply(AsyncWebServerRequest *request);
 
-	void	wpmdata(AsyncWebServerRequest *request);
+	void wpmdata(AsyncWebServerRequest *request);
 
 	/**
 	 * @brief - set webUI refresh rate in seconds
@@ -187,10 +187,10 @@ void msgdebug(uint8_t id, const RX_msg *m);
 // #include "espem.h"
 #include "EmbUI.h"	// EmbUI framework
 
-#define MAX_FREE_MEM_BLK ESP.getMaxAllocHeap()
-#define PUB_JSSIZE		 1024
+#define 	MAX_FREE_MEM_BLK 	ESP.getMaxAllocHeap()
+#define 	PUB_JSSIZE		 	1024
 // sprintf template for json sampling data
-#define JSON_SMPL_LEN	 85	 // {"t":1615496537000,"U":229.50,"I":1.47,"P":1216,"W":5811338,"hz":50.0,"pF":0.64},
+#define 	JSON_SMPL_LEN	 	85	 // {"t":1615496537000,"U":229.50,"I":1.47,"P":1216,"W":5811338,"hz":50.0,"pF":0.64},
 static const char  PGsmpljsontpl[] PROGMEM = "{\"t\":%u000,\"U\":%.2f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f,\"hz\":%.1f,\"pF\":%.2f},";
 static const char  PGdatajsontpl[] PROGMEM = "{\"age\":%llu,\"U\":%.1f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f,\"hz\":%.1f,\"pF\":%.2f}";
 
@@ -364,47 +364,48 @@ void DataStorage::wsamples(AsyncWebServerRequest *request) {
 
 	LOG(printf, "TimeSeries buffer has %d items, scntr: %d\n", ts->getSize(), cnt);
 
-	AsyncWebServerResponse *response = request->beginChunkedResponse(FPSTR(PGmimejson),
-																	 [this, iter, ts](uint8_t *buffer, size_t buffsize, size_t index) mutable -> size_t {
-																		 // If provided bufer is not large enough to fit 1 sample chunk, than I'm just sending
-																		 // an empty white space char (allowed json symbol) and wait for the next buffer
-																		 if (buffsize < JSON_SMPL_LEN) {
-																			 buffer[0] = 0x20;	// ASCII 'white space'
-																			 return 1;
-																		 }
+	AsyncWebServerResponse *response = request->beginChunkedResponse(
+			FPSTR(PGmimejson),
+			[this, iter, ts](uint8_t *buffer, size_t buffsize, size_t index) mutable -> size_t {
+				// If provided bufer is not large enough to fit 1 sample chunk, than I'm just sending
+				// an empty white space char (allowed json symbol) and wait for the next buffer
+				if (buffsize < JSON_SMPL_LEN) {
+					buffer[0] = 0x20;	// ASCII 'white space'
+					return 1;
+				}
 
-																		 size_t len = 0;
+				size_t len = 0;
 
-																		 if (!index) {
-																			 buffer[0] = 0x5b;	// Open json array with ASCII '['
-																			 ++len;
-																		 }
+				if (!index) {
+					buffer[0] = 0x5b;	// Open json array with ASCII '['
+					++len;
+				}
 
-																		 // prepare a chunk of sampled data wrapped in json
-																		 while (len < (buffsize - JSON_SMPL_LEN) && iter != ts->cend()) {
-																			 if (iter.operator->() != nullptr) {
-																				 // obtain a copy of a struct (.asFloat() member method crashes for dereferenced obj - TODO: investigate)
-																				 pz004::metrics m = *iter.operator->();
+				// prepare a chunk of sampled data wrapped in json
+				while (len < (buffsize - JSON_SMPL_LEN) && iter != ts->cend()) {
+					if (iter.operator->() != nullptr) {
+						// obtain a copy of a struct (.asFloat() member method crashes for dereferenced obj - TODO: investigate)
+						pz004::metrics m = *iter.operator->();
 
-																				 len += sprintf((char *)buffer + len, PGsmpljsontpl,
-																								ts->getTstamp() - (ts->cend() - iter) * ts->getInterval(),	// timestamp
-																								m.asFloat(meter_t::vol),
-																								m.asFloat(meter_t::cur),
-																								m.asFloat(meter_t::pwr),
-																								m.asFloat(meter_t::enrg) + nrg_offset,
-																								m.asFloat(meter_t::frq),
-																								m.asFloat(meter_t::pf));
-																			 } else {
-																				 LOG(println, "SMLP pointer is null");
-																			 }
+						len += sprintf((char *)buffer + len, PGsmpljsontpl,
+									ts->getTstamp() - (ts->cend() - iter) * ts->getInterval(),	// timestamp
+									m.asFloat(meter_t::vol),
+									m.asFloat(meter_t::cur),
+									m.asFloat(meter_t::pwr),
+									m.asFloat(meter_t::enrg) + nrg_offset,
+									m.asFloat(meter_t::frq),
+									m.asFloat(meter_t::pf));
+					} else {
+						LOG(println, "SMLP pointer is null");
+					}
 
-																			 if (++iter == ts->cend())
-																				 buffer[len - 1] = 0x5d;  // ASCII ']' implaced over last comma
-																		 }
+					if (++iter == ts->cend())
+						buffer[len - 1] = 0x5d;  // ASCII ']' implaced over last comma
+				}
 
-																		 LOG(printf, "Sending timeseries JSON, buffer %d/%d, items left: %d\n", len, buffsize, ts->cend() - iter);
-																		 return len;
-																	 });
+				LOG(printf, "Sending timeseries JSON, buffer %d/%d, items left: %d\n", len, buffsize, ts->cend() - iter);
+				return len;
+			});
 
 	response->addHeader(PGacao, "*");  // CORS header
 	request->send(response);
@@ -412,9 +413,9 @@ void DataStorage::wsamples(AsyncWebServerRequest *request) {
 
 // publish meter data via availbale EmbUI feeders (a periodic Task)
 void Espem::wspublish() {
-	if (!embui.feeders.available() || !pz)	// exit, if there are no clients connected
+	if (!embui.feeders.available() || !pz){	// exit, if there are no clients connected
 		return;
-
+	}
 	const auto	 m = pz->getMetricsPZ004();
 
 	JsonDocument doc;
@@ -502,9 +503,11 @@ mcstate_t Espem::set_collector_state(mcstate_t state) {
 				if (!pz->getState()->dataStale()) {
 					ds.push(*(pz->getMetricsPZ004()), time(nullptr));
 				}
-#ifdef ESPEM_DEBUG
-				if (m) msgdebug(id, m);	 // it will print every data packet coming from PZEM
-#endif
+				#ifdef ESPEM_DEBUG
+					if (m) {
+						msgdebug(id, m);
+					}	 // it will print every data packet coming from PZEM
+				#endif
 			});
 			ts_state = mcstate_t::MC_RUN;
 			break;
