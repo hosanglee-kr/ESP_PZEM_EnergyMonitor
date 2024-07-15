@@ -53,10 +53,10 @@ static const char  PGsmpljsontpl[] PROGMEM = "{\"t\":%u000,\"U\":%.2f,\"I\":%.2f
 static const char  PGdatajsontpl[] PROGMEM = "{\"age\":%llu,\"U\":%.1f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f,\"hz\":%.1f,\"pF\":%.2f}";
 
 // HTTP responce messages
-static const char  PGsmpld[]			   = "Metrics collector disabled";
-static const char  PGdre[]				   = "Data read error";
-static const char  PGacao[]				   = "Access-Control-Allow-Origin";
-static const char *PGmimetxt			   = "text/plain";
+static const char  PGsmpld[]			= "Metrics collector disabled";
+static const char  PGdre[]			= "Data read error";
+static const char  PGacao[]		        = "Access-Control-Allow-Origin";
+static const char *PGmimetxt			= "text/plain";
 // static const char* PGmimehtml = "text/html; charset=utf-8";
 /////////////////
 void			 block_menu(Interface *interf);
@@ -67,6 +67,9 @@ void			 block_menu(Interface *interf);
  * @param m
  */
 void msgdebug(uint8_t id, const RX_msg *m);
+
+using namespace pzmbus;	 // use general pzem abstractions
+
 
 ////////////////
 
@@ -314,9 +317,6 @@ class Espem {
 	// todo: provide vector with flags for each field
 	// String& mkjsondata( const float result[], const unsigned long tstamp, String& jsn, const bool W );
 };
-
-
-using namespace pzmbus;	 // use general pzem abstractions
 
 class FrameSendMQTTRaw : public FrameSendMQTT {
    public:
