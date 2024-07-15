@@ -6,48 +6,52 @@ name: PlatformIO CI
 
 on:
   push:
-    branches: [ dev1 ] #[ main, dev1 ]
+#    branches: [ main ]
     paths:
-      - '**.cpp'
-      - '**.hpp'
-      - '**.h'
-      - '**.c'
-      - '**.ini'
-      - '**.yml'
+    - '**.ino'
+    - '**.cpp'
+    - '**.hpp'
+    - '**.h'
+    - '**.c'
+    - '**.ini'
+    - '**.yml'
   pull_request:
-    branches: [ main]
+#    branches: [ main ]
     paths:
-      - '**.cpp'
-      - '**.hpp'
-      - '**.h'
-      - '**.c'
-      - '**.ini'
-      - '**.yml'
+    - '**.ino'
+    - '**.cpp'
+    - '**.hpp'
+    - '**.h'
+    - '**.c'
+    - '**.ini'
+    - '**.yml'
 
 jobs:
   build:
 
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 2
       matrix:
-        code:
-          - "."
+        example:
+#          - "examples/01_SinglePZEM004"
+#          - "examples/02_SinglePZEM003"
+#          - "examples/03_MultiplePZEM004"
+#          - "examples/04_MixedPool"
+          - "examples/05_TimeSeries"
+#          - "examples/pzem_cli"
 
     steps:
       - uses: actions/checkout@v3
       - name: PIO Cache
-        id: cache-pio
         uses: actions/cache@v3
-        env:
-          cache-name: cache-pio-pkgs
         with:
           path: |
             ~/.cache/pip
             ~/.platformio/.cache
-          key: ${{ runner.os }}-pio-${{env.cache-name}}
-          restore-keys: |
-            ${{ runner.os }}-pio-
-            ${{ runner.os }}-
+          key: ${{ runner.os }}-pio
+          #restore-keys: |
+          #  ${{ runner.os }}-pio
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -57,10 +61,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade platformio
           #platformio pkg update
-      - name: Run PlatformIO
+      - name: PIO build
+        env: 
+          PLATFORMIO_CI_SRC: ${{ matrix.example }}
         run: |
-          pio run -e espem -e espem_debug
-#      env: 
-#        PLATFORMIO_CI_SRC: ${{ matrix.code }}
-#      run: |
-#        pio ci -c ${{ matrix.code }}/platformio.ini
+          cd ${{ matrix.example }} && platformio run -e example -e debug
+          #pio ci -c ${{ matrix.example }}/platformio.ini
