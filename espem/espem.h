@@ -39,8 +39,35 @@ enum class mcstate_t {
 // TaskScheduler - Let the runner object be a global, single instance shared between object files.
 extern Scheduler ts;
 
+
+/////////
+
+// #include "espem.h"
+#include "EmbUI.h"	// EmbUI framework
+
+#define MAX_FREE_MEM_BLK ESP.getMaxAllocHeap()
+#define PUB_JSSIZE		 1024
+// sprintf template for json sampling data
+#define JSON_SMPL_LEN	 85	 // {"t":1615496537000,"U":229.50,"I":1.47,"P":1216,"W":5811338,"hz":50.0,"pF":0.64},
+static const char  PGsmpljsontpl[] PROGMEM = "{\"t\":%u000,\"U\":%.2f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f,\"hz\":%.1f,\"pF\":%.2f},";
+static const char  PGdatajsontpl[] PROGMEM = "{\"age\":%llu,\"U\":%.1f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f,\"hz\":%.1f,\"pF\":%.2f}";
+
+// HTTP responce messages
+static const char  PGsmpld[]			   = "Metrics collector disabled";
+static const char  PGdre[]				   = "Data read error";
+static const char  PGacao[]				   = "Access-Control-Allow-Origin";
+static const char *PGmimetxt			   = "text/plain";
+// static const char* PGmimehtml = "text/html; charset=utf-8";
 /////////////////
 void			 block_menu(Interface *interf);
+/**
+ * @brief callback method to print debug data on PZEM RX
+ *
+ * @param id
+ * @param m
+ */
+void msgdebug(uint8_t id, const RX_msg *m);
+
 ////////////////
 
 class DataStorage : public TSContainer<pz004::metrics> {
@@ -111,18 +138,18 @@ void DataStorage::reset() {
 
 ////// return json-formatted response for in-RAM sampled data
 void DataStorage::wsamples(AsyncWebServerRequest *request) {
-	uint8_t id = 1;	 // default ts id
+    uint8_t id = 1;	 // default ts id
 
-	if (request->hasParam("tsid")) {
-		const AsyncWebParameter *p = request->getParam("tsid");
-		id					 = p->value().toInt();
-	}
+    if (request->hasParam("tsid")) {
+	const AsyncWebParameter *p = request->getParam("tsid");
+	id = p->value().toInt();
+    }
 
-	// check if there is any sampled data
-	if (!getTSsize(id)) {
-		request->send(503, PGmimejson, "[]");
-		return;
-	}
+    // check if there is any sampled data
+    if (!getTSsize(id)) {
+	request->send(503, PGmimejson, "[]");
+	return;
+    }
 
 	// json response maybe pretty large and needs too much of a precious ram to store it in a temp 'string'
 	// So I'm going to generate it on-the-fly and stream to client in chunks
@@ -288,32 +315,6 @@ class Espem {
 	// String& mkjsondata( const float result[], const unsigned long tstamp, String& jsn, const bool W );
 };
 
-/**
- * @brief callback method to print debug data on PZEM RX
- *
- * @param id
- * @param m
- */
-void msgdebug(uint8_t id, const RX_msg *m);
-
-/////////
-
-// #include "espem.h"
-#include "EmbUI.h"	// EmbUI framework
-
-#define MAX_FREE_MEM_BLK ESP.getMaxAllocHeap()
-#define PUB_JSSIZE		 1024
-// sprintf template for json sampling data
-#define JSON_SMPL_LEN	 85	 // {"t":1615496537000,"U":229.50,"I":1.47,"P":1216,"W":5811338,"hz":50.0,"pF":0.64},
-static const char  PGsmpljsontpl[] PROGMEM = "{\"t\":%u000,\"U\":%.2f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f,\"hz\":%.1f,\"pF\":%.2f},";
-static const char  PGdatajsontpl[] PROGMEM = "{\"age\":%llu,\"U\":%.1f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f,\"hz\":%.1f,\"pF\":%.2f}";
-
-// HTTP responce messages
-static const char  PGsmpld[]			   = "Metrics collector disabled";
-static const char  PGdre[]				   = "Data read error";
-static const char  PGacao[]				   = "Access-Control-Allow-Origin";
-static const char *PGmimetxt			   = "text/plain";
-// static const char* PGmimehtml = "text/html; charset=utf-8";
 
 using namespace pzmbus;	 // use general pzem abstractions
 
