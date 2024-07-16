@@ -1,10 +1,9 @@
-/*  ESPEM - ESP Energy monitor
- *  A code for ESP32 based boards to interface with PeaceFair PZEM PowerMeters
- *  It can poll/collect PowerMeter data and provide it for futher processing in text/json format
- *
- *  (c) Emil Muratov 2018-2022  https://github.com/vortigont/espem
- *
- */
+/// ESPEM - ESP Energy monitor
+//  A code for ESP32 based boards to interface with PeaceFair PZEM PowerMeters
+//  It can poll/collect PowerMeter data and provide it for futher processing in text/json format
+
+//  (c) Emil Muratov 2018-2022  https://github.com/vortigont/espem
+
 
 #pragma once
 // #include "main.h"
@@ -45,32 +44,29 @@ extern Scheduler ts;
 // #include "espem.h"
 #include "EmbUI.h"	// EmbUI framework
 
-#define 			MAX_FREE_MEM_BLK			ESP.getMaxAllocHeap()
-#define 			PUB_JSSIZE					1024
+#define 		MAX_FREE_MEM_BLK		ESP.getMaxAllocHeap()
+#define 		PUB_JSSIZE			1024
 // sprintf template for json sampling data
-#define 			JSON_SMPL_LEN				85	 	// {"t":1615496537000,"U":229.50,"I":1.47,"P":1216,"W":5811338,"hz":50.0,"pF":0.64},
+#define 		JSON_SMPL_LEN			85	 	// {"t":1615496537000,"U":229.50,"I":1.47,"P":1216,"W":5811338,"hz":50.0,"pF":0.64},
 static const char	PGsmpljsontpl[] PROGMEM 	= "{\"t\":%u000,\"U\":%.2f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f,\"hz\":%.1f,\"pF\":%.2f},";
 static const char	PGdatajsontpl[] PROGMEM 	= "{\"age\":%llu,\"U\":%.1f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f,\"hz\":%.1f,\"pF\":%.2f}";
 
 // HTTP responce messages
-static const char  PGsmpld[]					= "Metrics collector disabled";
-static const char  PGdre[]						= "Data read error";
-static const char  PGacao[]		        		= "Access-Control-Allow-Origin";
-static const char *PGmimetxt					= "text/plain";
+static const char       PGsmpld[]			= "Metrics collector disabled";
+static const char       PGdre[]				= "Data read error";
+static const char       PGacao[]		        = "Access-Control-Allow-Origin";
+static const char*      PGmimetxt			= "text/plain";
 // static const char* PGmimehtml = "text/html; charset=utf-8";
 
 /////////////////
 void block_menu(Interface *interf);
-/**
- * @brief callback method to print debug data on PZEM RX
- *
- * @param id
- * @param m
- */
+
+ // @brief callback method to print debug data on PZEM RX
+ // * @param id
+ // * @param m
 void msgdebug(uint8_t id, const RX_msg *m);
 
 using namespace pzmbus;	 // use general pzem abstractions
-
 
 ////////////////
 
@@ -109,15 +105,33 @@ void DataStorage::reset() {
 	tsids.clear();
 
 	uint8_t a;
-	a = addTS(embui.paramVariant(V_TS_T1_CNT), time(nullptr), embui.paramVariant(V_TS_T1_INT), "Tier 1", 1);
+	a = addTS( 
+		  embui.paramVariant(V_TS_T1_CNT)
+		, time(nullptr)
+		, embui.paramVariant(V_TS_T1_INT)
+		, "Tier 1"
+		, 1
+		);
 	tsids.push_back(a);
 	// LOG(printf, "Add TS: %d\n", a);
 
-	a = addTS(embui.paramVariant(V_TS_T2_CNT), time(nullptr), embui.paramVariant(V_TS_T2_INT), "Tier 2", 2);
+	a = addTS(
+		  embui.paramVariant(V_TS_T2_CNT)
+		, time(nullptr)
+		, embui.paramVariant(V_TS_T2_INT)
+		, "Tier 2"
+		, 2
+		);
 	tsids.push_back(a);
 	// LOG(printf, "Add TS: %d\n", a);
 
-	a = addTS(embui.paramVariant(V_TS_T3_CNT), time(nullptr), embui.paramVariant(V_TS_T3_INT), "Tier 3", 3);
+	a = addTS(
+		  embui.paramVariant(V_TS_T3_CNT)
+		, time(nullptr)
+		, embui.paramVariant(V_TS_T3_INT)
+		, "Tier 3"
+		, 3
+		);
 	tsids.push_back(a);
 	// LOG(printf, "Add TS: %d\n", a);
 
@@ -126,7 +140,12 @@ void DataStorage::reset() {
 		for (auto i : tsids) {
 			auto t = getTS(i);
 			if (t) {
-				LOG(printf, "%s: size:%d, interval:%u, mem:%u\n", t->getDescr(), t->capacity, t->getInterval(), t->capacity * sizeof(pz004::metrics));
+				LOG(printf, "%s: size:%d, interval:%u, mem:%u\n"
+					, t->getDescr()
+					, t->capacity
+					, t->getInterval()
+					, t->capacity * sizeof(pz004::metrics)
+				);
 			}
 		})
 
@@ -210,7 +229,11 @@ void DataStorage::wsamples(AsyncWebServerRequest *request) {
 					buffer[len - 1] = 0x5d;  // ASCII ']' implaced over last comma
 			}
 
-			LOG(printf, "Sending timeseries JSON, buffer %d/%d, items left: %d\n", len, buffsize, ts->cend() - iter);
+			LOG(printf, "Sending timeseries JSON, buffer %d/%d, items left: %d\n"
+				, len
+				, buffsize
+				, ts->cend() - iter
+			);
 			return len;
 		});
 
@@ -377,7 +400,7 @@ String &Espem::mktxtdata(String &txtdata) {
 	// pmeterData pdata = meter->getData();
 	const auto m = pz->getMetricsPZ004();
 
-	txtdata		 = "U:";
+	txtdata	 = "U:";
 	txtdata += m->voltage / 10;
 	txtdata += " I:";
 	txtdata += m->current / 1000;
@@ -425,16 +448,16 @@ void Espem::wspublish() {
 	}
 	const auto	 m = pz->getMetricsPZ004();
 
-	JsonDocument doc;
-	JsonObject	 obj = doc.to<JsonObject>();
-	doc["stale"]	 = pz->getState()->dataStale();
-	doc["age"]		 = pz->getState()->dataAge();
-	doc["U"]		 = m->voltage;
-	doc["I"]		 = m->current;
-	doc["P"]		 = m->power;
-	doc["W"]		 = m->energy + ds.getEnergyOffset();
-	doc["Pf"]		 = m->pf;
-	doc["freq"]		 = m->freq;
+	JsonDocument  doc;
+	JsonObject obj  = doc.to<JsonObject>();
+	doc["stale"]	= pz->getState()->dataStale();
+	doc["age"]	= pz->getState()->dataAge();
+	doc["U"]	= m->voltage;
+	doc["I"]	= m->current;
+	doc["P"]	= m->power;
+	doc["W"]	= m->energy + ds.getEnergyOffset();
+	doc["Pf"]	= m->pf;
+	doc["freq"]	= m->freq;
 
 	Interface interf(&embui.feeders);
 	// Interface interf(&embui.feeders, 128);
