@@ -50,7 +50,7 @@ extern Scheduler ts;
 #define 		JSON_SMPL_LEN			85	 	// {"t":1615496537000,"U":229.50,"I":1.47,"P":1216,"W":5811338,"hz":50.0,"pF":0.64},
 
 // #define 	G_B00_PZEM_MODEL_PZEM003			1
-// #define 	G_B00_PZEM_MODEL_PZEM004V3 
+#define 	G_B00_PZEM_MODEL_PZEM004V3 
 
 #if  defined(G_B00_PZEM_MODEL_PZEM003)
     static const char	PGsmpljsontpl[] PROGMEM 	= "{\"t\":%u000,\"U\":%.2f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f},";
@@ -141,7 +141,7 @@ class DataStorage : public TSContainer<pz004::metrics> {
 };
 
 template <class T>
-void DataStorage::reset() {
+void DataStorage<T>::reset() {
 	purge();
 	tsids.clear();
 
@@ -195,7 +195,7 @@ void DataStorage::reset() {
 }
 
 template <>
-void DataStorage::reset() {
+void DataStorage<pz004::metrics>::reset() {
 	purge();
 	tsids.clear();
 
@@ -252,7 +252,7 @@ void DataStorage::reset() {
 
 template <class T>
 ////// return json-formatted response for in-RAM sampled data
-void DataStorage::wsamples(AsyncWebServerRequest *request) {
+void DataStorage<T>::wsamples(AsyncWebServerRequest *request) {
     uint8_t id = 1;	 // default ts id
 
     if (request->hasParam("tsid")) {
@@ -345,7 +345,7 @@ void DataStorage::wsamples(AsyncWebServerRequest *request) {
 
 template <>
 ////// return json-formatted response for in-RAM sampled data
-void DataStorage::wsamples(AsyncWebServerRequest *request) {
+void DataStorage<pz004::metrics>::wsamples(AsyncWebServerRequest *request) {
     uint8_t id = 1;	 // default ts id
 
     if (request->hasParam("tsid")) {
