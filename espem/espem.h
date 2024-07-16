@@ -255,18 +255,13 @@ class Espem {
 	 // @param seconds - webUI interval
 	uint8_t set_uirate(uint8_t seconds);
 
-	/**
-	 * @brief Get the ui refresh rate
-	 *
-	 * @return uint8_t
-	 */
+	// @brief Get the ui refresh rate
+	// @return uint8_t
 	uint8_t get_uirate();  // TaskScheduler class does not allow it to declare const'ness
 
-	/**
-	 * @brief - Control meter polling
-	 * @param active - enable/disable
-	 * @return - current state
-	 */
+	// @brief - Control meter polling
+	// @param active - enable/disable
+	// @return - current state
 	bool	meterPolling(bool active) {
 		   return pz->autopoll(active);
 	};
@@ -290,10 +285,7 @@ class Espem {
 
 	String	 &mktxtdata(String &txtdata);
 
-	/**
-	 * @brief publish updates to websocket clients
-	 *
-	 */
+	// @brief publish updates to websocket clients
 	void	  wspublish();
 
 	// make json string out of array provided
@@ -514,10 +506,8 @@ mcstate_t Espem::set_collector_state(mcstate_t state) {
 void msgdebug(uint8_t id, const RX_msg *m) {
 	Serial.printf("\nCallback triggered for PZEM ID: %d\n", id);
 
-	/*
-		It is also possible to work directly on a raw data from PZEM
-		let's call for a little help here and use a pretty_printer() function
-		that parses and prints RX_msg to the stdout
-	*/
+	// It is also possible to work directly on a raw data from PZEM
+	// let's call for a little help here and use a pretty_printer() function
+	// that parses and prints RX_msg to the stdout
 	pz004::rx_msg_prettyp(m);
 }
