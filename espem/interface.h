@@ -44,9 +44,6 @@ void			   ui_page_espem(Interface *interf, const JsonObject *data, const char *a
 /**
  * Headlile section
  * this is an overriden weak method that builds our WebUI from the top
- * ==
- * Головная секция
- * переопределенный метод фреймфорка, который начинает строить корень нашего WebUI
  *
  */
 void ui_page_main(Interface *interf, const JsonObject *data, const char *action) {
