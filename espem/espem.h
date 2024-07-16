@@ -69,12 +69,12 @@ void msgdebug(uint8_t id, const RX_msg *m);
 using namespace pzmbus;	 // use general pzem abstractions
 
 ////////////////
-
-class DataStorage : public TSContainer<pz004::metrics> {
+template <class T>
+class DataStorage : public TSContainer<T> {
 	std::vector<uint8_t> tsids;
 
 	// energy offset
-	int32_t				 nrg_offset{0};
+	int32_t	nrg_offset{0};
 
    public:
 	
@@ -100,6 +100,92 @@ class DataStorage : public TSContainer<pz004::metrics> {
 	void wsamples(AsyncWebServerRequest *request);
 };
 
+template <>
+class DataStorage : public TSContainer<pz004::metrics> {
+	std::vector<uint8_t> tsids;
+
+	// energy offset
+	int32_t	 nrg_offset{0};
+
+   public:
+	
+	// @brief setup TimeSeries Container based on saved params in EmbUI config
+	void reset();
+
+	
+	// @brief Set the Energy offset value
+	// tis will offset energy value replies from PZEM
+	// i.e. to match some other counter, etc...
+	//  @param offset
+	
+	void setEnergyOffset(int32_t offset) {
+		nrg_offset = offset;
+	}
+
+	// @brief Get the Energy offset value
+	 // @return float
+	int32_t getEnergyOffset() {
+		return nrg_offset;
+	}
+
+	void wsamples(AsyncWebServerRequest *request);
+};
+
+template <class T>
+void DataStorage::reset() {
+	purge();
+	tsids.clear();
+
+	uint8_t a;
+	a = addTS( 
+		  embui.paramVariant(V_TS_T1_CNT)
+		, time(nullptr)
+		, embui.paramVariant(V_TS_T1_INT)
+		, "Tier 1"
+		, 1
+		);
+	tsids.push_back(a);
+	// LOG(printf, "Add TS: %d\n", a);
+
+	a = addTS(
+		  embui.paramVariant(V_TS_T2_CNT)
+		, time(nullptr)
+		, embui.paramVariant(V_TS_T2_INT)
+		, "Tier 2"
+		, 2
+		);
+	tsids.push_back(a);
+	// LOG(printf, "Add TS: %d\n", a);
+
+	a = addTS(
+		  embui.paramVariant(V_TS_T3_CNT)
+		, time(nullptr)
+		, embui.paramVariant(V_TS_T3_INT)
+		, "Tier 3"
+		, 3
+		);
+	tsids.push_back(a);
+	// LOG(printf, "Add TS: %d\n", a);
+
+	LOG(println, "Setup TimeSeries DB:");
+	LOG_CALL(
+		for (auto i : tsids) {
+			auto t = getTS(i);
+			if (t) {
+				LOG(printf, "%s: size:%d, interval:%u, mem:%u\n"
+					, t->getDescr()
+					, t->capacity
+					, t->getInterval()
+					, t->capacity * sizeof(<T>)
+				);
+			}
+		})
+
+	LOG(printf, "SRAM: heap %u, free %u\n", ESP.getHeapSize(), ESP.getFreeHeap());
+	LOG(printf, "SPI-RAM: size %u, free %u\n", ESP.getPsramSize(), ESP.getFreePsram());
+}
+
+template <>
 void DataStorage::reset() {
 	purge();
 	tsids.clear();
@@ -153,6 +239,10 @@ void DataStorage::reset() {
 	LOG(printf, "SPI-RAM: size %u, free %u\n", ESP.getPsramSize(), ESP.getFreePsram());
 }
 
+template <class T>
+
+
+template <>
 ////// return json-formatted response for in-RAM sampled data
 void DataStorage::wsamples(AsyncWebServerRequest *request) {
     uint8_t id = 1;	 // default ts id
