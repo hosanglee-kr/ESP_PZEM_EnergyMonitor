@@ -109,6 +109,7 @@ class DataStorage : public TSContainer<T> {
 	void wsamples(AsyncWebServerRequest *request);
 };
 
+/*
 template <>
 class DataStorage : public TSContainer<pz004::metrics> {
 	std::vector<uint8_t> tsids;
@@ -139,6 +140,7 @@ class DataStorage : public TSContainer<pz004::metrics> {
 
 	void wsamples(AsyncWebServerRequest *request);
 };
+*/
 
 template <class T>
 void DataStorage<T>::reset() {
