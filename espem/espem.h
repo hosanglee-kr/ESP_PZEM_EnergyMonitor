@@ -48,8 +48,17 @@ extern Scheduler ts;
 #define 		PUB_JSSIZE			1024
 // sprintf template for json sampling data
 #define 		JSON_SMPL_LEN			85	 	// {"t":1615496537000,"U":229.50,"I":1.47,"P":1216,"W":5811338,"hz":50.0,"pF":0.64},
-static const char	PGsmpljsontpl[] PROGMEM 	= "{\"t\":%u000,\"U\":%.2f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f,\"hz\":%.1f,\"pF\":%.2f},";
-static const char	PGdatajsontpl[] PROGMEM 	= "{\"age\":%llu,\"U\":%.1f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f,\"hz\":%.1f,\"pF\":%.2f}";
+
+// #define 	G_B00_PZEM_MODEL_PZEM003			1
+// #define 	G_B00_PZEM_MODEL_PZEM004V3 
+
+#if  defined(G_B00_PZEM_MODEL_PZEM003)
+    static const char	PGsmpljsontpl[] PROGMEM 	= "{\"t\":%u000,\"U\":%.2f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f},";
+    static const char	PGdatajsontpl[] PROGMEM 	= "{\"age\":%llu,\"U\":%.1f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f}";
+#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+    static const char	PGsmpljsontpl[] PROGMEM 	= "{\"t\":%u000,\"U\":%.2f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f,\"hz\":%.1f,\"pF\":%.2f},";
+    static const char	PGdatajsontpl[] PROGMEM 	= "{\"age\":%llu,\"U\":%.1f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f,\"hz\":%.1f,\"pF\":%.2f}";
+#endif
 
 // HTTP responce messages
 static const char       PGsmpld[]			= "Metrics collector disabled";
@@ -239,8 +248,100 @@ void DataStorage::reset() {
 	LOG(printf, "SPI-RAM: size %u, free %u\n", ESP.getPsramSize(), ESP.getFreePsram());
 }
 
-template <class T>
 
+
+template <class T>
+////// return json-formatted response for in-RAM sampled data
+void DataStorage::wsamples(AsyncWebServerRequest *request) {
+    uint8_t id = 1;	 // default ts id
+
+    if (request->hasParam("tsid")) {
+	const AsyncWebParameter *p = request->getParam("tsid");
+	id = p->value().toInt();
+    }
+
+    // check if there is any sampled data
+    if (!getTSsize(id)) {
+	request->send(503, PGmimejson, "[]");
+	return;
+    }
+
+	// json response maybe pretty large and needs too much of a precious ram to store it in a temp 'string'
+	// So I'm going to generate it on-the-fly and stream to client in chunks
+
+	size_t cnt = 0;	 // cnt - return last 'cnt' samples, 0 - all samples
+
+	if (request->hasParam(C_scnt)) {
+		const AsyncWebParameter *p = request->getParam(C_scnt);
+		if (!p->value().isEmpty())
+			cnt = p->value().toInt();
+	}
+
+	const auto ts = getTS(id);
+	if (!ts){
+		request->send(503, PGmimejson, "[]");
+	}
+	auto iter = ts->cbegin();  // get const iterator
+
+	// set number of samples to send in responce
+	if (cnt > 0 && cnt < ts->getSize()){
+		iter += ts->getSize() - cnt;  // offset iterator to the last cnt elements
+	}
+
+	LOG(printf, "TimeSeries buffer has %d items, scntr: %d\n", ts->getSize(), cnt);
+
+	AsyncWebServerResponse *response = request->beginChunkedResponse(FPSTR(PGmimejson),
+		[this, iter, ts](uint8_t *buffer, size_t buffsize, size_t index) mutable -> size_t {
+			// If provided bufer is not large enough to fit 1 sample chunk, than I'm just sending
+			// an empty white space char (allowed json symbol) and wait for the next buffer
+			if (buffsize < JSON_SMPL_LEN) {
+				buffer[0] = 0x20;	// ASCII 'white space'
+				return 1;
+			}
+
+			size_t len = 0;
+
+			if (!index) {
+				buffer[0] = 0x5b;	// Open json array with ASCII '['
+				++len;
+			}
+
+			// prepare a chunk of sampled data wrapped in json
+			while (len < (buffsize - JSON_SMPL_LEN) && iter != ts->cend()) {
+				if (iter.operator->() != nullptr) {
+					// obtain a copy of a struct (.asFloat() member method crashes for dereferenced obj - TODO: investigate)
+					T m = *iter.operator->();
+
+					len += sprintf((char *)buffer + len, PGsmpljsontpl
+								, ts->getTstamp() - (ts->cend() - iter) * ts->getInterval()	// timestamp
+								, m.asFloat(meter_t::vol)
+								, m.asFloat(meter_t::cur)
+								, m.asFloat(meter_t::pwr)
+								, m.asFloat(meter_t::enrg) + nrg_offset
+						                #ifdef G_B00_PZEM_MODEL_PZEM004V3
+								    , m.asFloat(meter_t::frq)
+								    , m.asFloat(meter_t::pf)
+						                #endif
+						);
+				} else {
+					LOG(println, "SMLP pointer is null");
+				}
+
+				if (++iter == ts->cend())
+					buffer[len - 1] = 0x5d;  // ASCII ']' implaced over last comma
+			}
+
+			LOG(printf, "Sending timeseries JSON, buffer %d/%d, items left: %d\n"
+				, len
+				, buffsize
+				, ts->cend() - iter
+			);
+			return len;
+		});
+
+	response->addHeader(PGacao, "*");  // CORS header
+	request->send(response);
+}
 
 template <>
 ////// return json-formatted response for in-RAM sampled data
@@ -303,14 +404,17 @@ void DataStorage::wsamples(AsyncWebServerRequest *request) {
 					// obtain a copy of a struct (.asFloat() member method crashes for dereferenced obj - TODO: investigate)
 					pz004::metrics m = *iter.operator->();
 
-					len += sprintf((char *)buffer + len, PGsmpljsontpl,
-								ts->getTstamp() - (ts->cend() - iter) * ts->getInterval(),	// timestamp
-								m.asFloat(meter_t::vol),
-								m.asFloat(meter_t::cur),
-								m.asFloat(meter_t::pwr),
-								m.asFloat(meter_t::enrg) + nrg_offset,
-								m.asFloat(meter_t::frq),
-								m.asFloat(meter_t::pf));
+					len += sprintf((char *)buffer + len, PGsmpljsontpl
+								, ts->getTstamp() - (ts->cend() - iter) * ts->getInterval()	// timestamp
+								, m.asFloat(meter_t::vol)
+								, m.asFloat(meter_t::cur)
+								, m.asFloat(meter_t::pwr)
+								, m.asFloat(meter_t::enrg) + nrg_offset
+						                #ifdef G_B00_PZEM_MODEL_PZEM004V3
+								    , m.asFloat(meter_t::frq)
+								    , m.asFloat(meter_t::pf)
+						                #endif
+						);
 				} else {
 					LOG(println, "SMLP pointer is null");
 				}
