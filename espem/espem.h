@@ -81,28 +81,22 @@ class DataStorage : public TSContainer<pz004::metrics> {
 	int32_t				 nrg_offset{0};
 
    public:
-	/**
-	 * @brief setup TimeSeries Container based on saved params in EmbUI config
-	 *
-	 */
+	
+	// @brief setup TimeSeries Container based on saved params in EmbUI config
 	void reset();
 
-	/**
-	 * @brief Set the Energy offset value
-	 * tis will offset energy value replies from PZEM
-	 * i.e. to match some other counter, etc...
-	 *
-	 * @param offset
-	 */
+	
+	// @brief Set the Energy offset value
+	// tis will offset energy value replies from PZEM
+	// i.e. to match some other counter, etc...
+	//  @param offset
+	
 	void setEnergyOffset(int32_t offset) {
 		nrg_offset = offset;
 	}
 
-	/**
-	 * @brief Get the Energy offset value
-	 *
-	 * @return float
-	 */
+	// @brief Get the Energy offset value
+	 // @return float
 	int32_t getEnergyOffset() {
 		return nrg_offset;
 	}
@@ -231,10 +225,8 @@ class Espem {
 	// TimeSeries data storage
 	DataStorage ds;
 
-	/**
-	 * Class constructor
-	 * uses predefined values of a ESPEM_CFG
-	 */
+	 // Class constructor
+	 // uses predefined values of a ESPEM_CFG
 	Espem() {
 	}
 
@@ -248,28 +240,19 @@ class Espem {
 
 	bool begin(const uart_port_t p, int rx = UART_PIN_NO_CHANGE, int tx = UART_PIN_NO_CHANGE);
 
-	/** @brief onNetIfUp - коллбек для внешнего события "сеть доступна"
-	 *
-	 */
+	// @brief onNetIfUp - коллбек для внешнего события "сеть доступна" 
 	void onNetIfUp();
 
-	/** @brief onNetIfDown - коллбек для внешнего события "сеть НЕ доступна"
-	 *
-	 */
+	// @brief onNetIfDown - коллбек для внешнего события "сеть НЕ доступна"
 	void onNetIfDown();
 
-	/**
-	 * @brief - HTTP request callback with latest polled data (as json)
-	 *
-	 */
+	// @brief - HTTP request callback with latest polled data (as json)
 	void wdatareply(AsyncWebServerRequest *request);
 
 	void wpmdata(AsyncWebServerRequest *request);
 
-	/**
-	 * @brief - set webUI refresh rate in seconds
-	 * @param seconds - webUI interval
-	 */
+	 // @brief - set webUI refresh rate in seconds
+	 // @param seconds - webUI interval
 	uint8_t set_uirate(uint8_t seconds);
 
 	/**
