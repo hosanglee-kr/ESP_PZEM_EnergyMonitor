@@ -111,11 +111,11 @@ class DataStorage : public TSContainer<T> {
 
 template <class T>
 void DataStorage<T>::reset() {
-	purge();
+	this->purge();
 	tsids.clear();
 
 	uint8_t a;
-	a = addTS( 
+	a = this->addTS( 
 		  embui.paramVariant(V_TS_T1_CNT)
 		, time(nullptr)
 		, embui.paramVariant(V_TS_T1_INT)
@@ -125,7 +125,7 @@ void DataStorage<T>::reset() {
 	tsids.push_back(a);
 	// LOG(printf, "Add TS: %d\n", a);
 
-	a = addTS(
+	a = this->addTS(
 		  embui.paramVariant(V_TS_T2_CNT)
 		, time(nullptr)
 		, embui.paramVariant(V_TS_T2_INT)
@@ -135,7 +135,7 @@ void DataStorage<T>::reset() {
 	tsids.push_back(a);
 	// LOG(printf, "Add TS: %d\n", a);
 
-	a = addTS(
+	a = this->addTS(
 		  embui.paramVariant(V_TS_T3_CNT)
 		, time(nullptr)
 		, embui.paramVariant(V_TS_T3_INT)
@@ -165,11 +165,11 @@ void DataStorage<T>::reset() {
 
 template <>
 void DataStorage<pz004::metrics>::reset() {
-	purge();
+	this->purge();
 	tsids.clear();
 
 	uint8_t a;
-	a = addTS( 
+	a = this->addTS( 
 		  embui.paramVariant(V_TS_T1_CNT)
 		, time(nullptr)
 		, embui.paramVariant(V_TS_T1_INT)
@@ -179,7 +179,7 @@ void DataStorage<pz004::metrics>::reset() {
 	tsids.push_back(a);
 	// LOG(printf, "Add TS: %d\n", a);
 
-	a = addTS(
+	a = this->addTS(
 		  embui.paramVariant(V_TS_T2_CNT)
 		, time(nullptr)
 		, embui.paramVariant(V_TS_T2_INT)
@@ -189,7 +189,7 @@ void DataStorage<pz004::metrics>::reset() {
 	tsids.push_back(a);
 	// LOG(printf, "Add TS: %d\n", a);
 
-	a = addTS(
+	a = this->addTS(
 		  embui.paramVariant(V_TS_T3_CNT)
 		, time(nullptr)
 		, embui.paramVariant(V_TS_T3_INT)
