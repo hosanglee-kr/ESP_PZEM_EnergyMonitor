@@ -109,39 +109,6 @@ class DataStorage : public TSContainer<T> {
 	void wsamples(AsyncWebServerRequest *request);
 };
 
-/*
-template <>
-class DataStorage : public TSContainer<pz004::metrics> {
-	std::vector<uint8_t> tsids;
-
-	// energy offset
-	int32_t	 nrg_offset{0};
-
-   public:
-	
-	// @brief setup TimeSeries Container based on saved params in EmbUI config
-	void reset();
-
-	
-	// @brief Set the Energy offset value
-	// tis will offset energy value replies from PZEM
-	// i.e. to match some other counter, etc...
-	//  @param offset
-	
-	void setEnergyOffset(int32_t offset) {
-		nrg_offset = offset;
-	}
-
-	// @brief Get the Energy offset value
-	 // @return float
-	int32_t getEnergyOffset() {
-		return nrg_offset;
-	}
-
-	void wsamples(AsyncWebServerRequest *request);
-};
-*/
-
 template <class T>
 void DataStorage<T>::reset() {
 	purge();
