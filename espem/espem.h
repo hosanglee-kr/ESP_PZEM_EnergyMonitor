@@ -148,7 +148,7 @@ void DataStorage<T>::reset() {
 	LOG(println, "Setup TimeSeries DB:");
 	LOG_CALL(
 		for (auto i : tsids) {
-			auto t = getTS(i);
+			auto t = this->getTS(i);
 			if (t) {
 				LOG(printf, "%s: size:%d, interval:%u, mem:%u\n"
 					, t->getDescr()
@@ -202,7 +202,7 @@ void DataStorage<pz004::metrics>::reset() {
 	LOG(println, "Setup TimeSeries DB:");
 	LOG_CALL(
 		for (auto i : tsids) {
-			auto t = getTS(i);
+			auto t = this->getTS(i);
 			if (t) {
 				LOG(printf, "%s: size:%d, interval:%u, mem:%u\n"
 					, t->getDescr()
@@ -230,7 +230,7 @@ void DataStorage<T>::wsamples(AsyncWebServerRequest *request) {
     }
 
     // check if there is any sampled data
-    if (!getTSsize(id)) {
+    if (!this->getTSsize(id)) {
 	request->send(503, PGmimejson, "[]");
 	return;
     }
@@ -246,7 +246,7 @@ void DataStorage<T>::wsamples(AsyncWebServerRequest *request) {
 			cnt = p->value().toInt();
 	}
 
-	const auto ts = getTS(id);
+	const auto ts = this->getTS(id);
 	if (!ts){
 		request->send(503, PGmimejson, "[]");
 	}
@@ -323,7 +323,7 @@ void DataStorage<pz004::metrics>::wsamples(AsyncWebServerRequest *request) {
     }
 
     // check if there is any sampled data
-    if (!getTSsize(id)) {
+    if (!this->getTSsize(id)) {
 	request->send(503, PGmimejson, "[]");
 	return;
     }
@@ -339,7 +339,7 @@ void DataStorage<pz004::metrics>::wsamples(AsyncWebServerRequest *request) {
 			cnt = p->value().toInt();
 	}
 
-	const auto ts = getTS(id);
+	const auto ts = this->getTS(id);
 	if (!ts)
 		request->send(503, PGmimejson, "[]");
 
