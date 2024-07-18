@@ -52,6 +52,8 @@ extern Scheduler ts;
 // #define 	G_B00_PZEM_MODEL_PZEM003			1
 #define 	G_B00_PZEM_MODEL_PZEM004V3 
 
+#define         G_B00_PZEM_DUMMY
+
 #if  defined(G_B00_PZEM_MODEL_PZEM003)
     static const char	PGsmpljsontpl[] PROGMEM 	= "{\"t\":%u000,\"U\":%.2f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f},";
     static const char	PGdatajsontpl[] PROGMEM 	= "{\"age\":%llu,\"U\":%.1f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f}";
@@ -408,7 +410,11 @@ void DataStorage<pz004::metrics>::wsamples(AsyncWebServerRequest *request) {
 template <class T>
 class Espem {
    public:
-	PZ003 *pz = nullptr;
+	#if defined(G_B00_PZEM_MODEL_PZEM003)
+            PZ003	   *pz = nullptr;
+	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+            PZ004	   *pz = nullptr;
+	#endif
 
 	// TimeSeries data storage
 	DataStorage<T> ds;
@@ -451,15 +457,15 @@ class Espem {
 	// @param active - enable/disable
 	// @return - current state
 	bool	meterPolling(bool active) {
-		   return pz->autopoll(active);
+	    return pz->autopoll(active);
 	};
 	bool meterPolling() const {
-		return pz->autopoll();
+	    return pz->autopoll();
 	};
 
 	mcstate_t set_collector_state(mcstate_t state);
 	mcstate_t get_collector_state() const {
-		return ts_state;
+	    return ts_state;
 	};
 
    private:
@@ -469,7 +475,7 @@ class Espem {
 	Task	  t_uiupdater;
 
 	// mqtt feeder id
-	int		  _mqtt_feed_id{0};
+	int	_mqtt_feed_id{0};
 
 	String	 &mktxtdata(String &txtdata);
 
@@ -485,8 +491,12 @@ class Espem {
 template <>
 class Espem {
    public:
-	PZ004	   *pz = nullptr;
-
+        #if defined(G_B00_PZEM_MODEL_PZEM003)
+            PZ003	   *pz = nullptr;
+	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+            PZ004	   *pz = nullptr;
+	#endif
+	
 	// TimeSeries data storage
 	DataStorage<pz004::metrics> ds;
 
@@ -528,10 +538,10 @@ class Espem {
 	// @param active - enable/disable
 	// @return - current state
 	bool	meterPolling(bool active) {
-		   return pz->autopoll(active);
+	    return pz->autopoll(active);
 	};
 	bool meterPolling() const {
-		return pz->autopoll();
+	    return pz->autopoll();
 	};
 
 	mcstate_t set_collector_state(mcstate_t state);
@@ -592,12 +602,20 @@ bool Espem::begin(const uart_port_t p, int rx, int tx) {
 		return true;
 	}
 
-	// first run
-        #ifdef ESPEM_DUMMY
-	    pz = new DummyPZ004(PZEM_ID, ADDR_ANY);
-        #else
-	    pz = new PZ004(PZEM_ID, ADDR_ANY);
-        #endif
+
+        #if defined(G_B00_PZEM_MODEL_PZEM003)
+            #ifdef G_B00_PZEM_DUMMY
+	        pz = new DummyPZ003(PZEM_ID, ADDR_ANY);
+            #else
+	        pz = new PZ003(PZEM_ID, ADDR_ANY);
+            #endif
+	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+	    #ifdef G_B00_PZEM_DUMMY
+	        pz = new DummyPZ004(PZEM_ID, ADDR_ANY);
+            #else
+	        pz = new PZ004(PZEM_ID, ADDR_ANY);
+            #endif
+	#endif
 	
 	if (!pz) return false;	// failed to create obj
 
@@ -639,8 +657,13 @@ String &Espem::mktxtdata(String &txtdata) {
 	if (!pz)
 		return txtdata;
 
-	// pmeterData pdata = meter->getData();
-	const auto m = pz->getMetricsPZ004();
+	#if defined(G_B00_PZEM_MODEL_PZEM003)
+            // pmeterData pdata = meter->getData();
+	    const auto m = pz->getMetricsPZ003();
+	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+            // pmeterData pdata = meter->getData();
+	    const auto m = pz->getMetricsPZ004();
+	#endif
 
 	txtdata	 = "U:";
 	txtdata += m->voltage / 10;
@@ -667,19 +690,30 @@ void Espem::wpmdata(AsyncWebServerRequest *request) {
 }
 
 void Espem::wdatareply(AsyncWebServerRequest *request) {
-	if (!pz)
-		return;
+	if (!pz){
+	    return;
+	}
 
-	const auto m = pz->getMetricsPZ004();
+	#if defined(G_B00_PZEM_MODEL_PZEM003)
+	    const auto m = pz->getMetricsPZ003();
+	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+	    const auto m = pz->getMetricsPZ004();
+	#endif
+	//const auto m = pz->getMetricsPZ004();
+	
 	char	   buffer[JSON_SMPL_LEN];
-	sprintf_P(buffer, PGdatajsontpl,
-			  pz->getState()->dataAge(),
-			  m->asFloat(meter_t::vol),
-			  m->asFloat(meter_t::cur),
-			  m->asFloat(meter_t::pwr),
-			  m->asFloat(meter_t::enrg) + ds.getEnergyOffset(),
-			  m->asFloat(meter_t::frq),
-			  m->asFloat(meter_t::pf));
+	sprintf_P(buffer, PGdatajsontpl
+			  , pz->getState()->dataAge()
+			  , m->asFloat(meter_t::vol)
+			  , m->asFloat(meter_t::cur)
+			  , m->asFloat(meter_t::pwr)
+			  , m->asFloat(meter_t::enrg) + ds.getEnergyOffset()
+		          
+	                  #if defined(G_B00_PZEM_MODEL_PZEM004V3)
+	                      , m->asFloat(meter_t::frq)
+			      , m->asFloat(meter_t::pf)
+	                  #endif
+	                  );
 	request->send(200, FPSTR(PGmimejson), buffer);
 }
 
@@ -688,7 +722,12 @@ void Espem::wspublish() {
 	if (!embui.feeders.available() || !pz){	// exit, if there are no clients connected
 		return;
 	}
-	const auto	 m = pz->getMetricsPZ004();
+
+	#if defined(G_B00_PZEM_MODEL_PZEM003)
+	    const auto m = pz->getMetricsPZ003();
+	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+	    const auto m = pz->getMetricsPZ004();
+	#endif
 
 	JsonDocument  doc;
 	JsonObject obj  = doc.to<JsonObject>();
@@ -698,8 +737,10 @@ void Espem::wspublish() {
 	doc["I"]	= m->current;
 	doc["P"]	= m->power;
 	doc["W"]	= m->energy + ds.getEnergyOffset();
-	doc["Pf"]	= m->pf;
-	doc["freq"]	= m->freq;
+	#if defined(G_B00_PZEM_MODEL_PZEM004V3)
+	    doc["Pf"]	= m->pf;
+	    doc["freq"]	= m->freq;
+	#endif
 
 	Interface interf(&embui.feeders);
 	// Interface interf(&embui.feeders, 128);
