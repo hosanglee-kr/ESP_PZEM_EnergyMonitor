@@ -408,7 +408,7 @@ void DataStorage<pz004::metrics>::wsamples(AsyncWebServerRequest *request) {
 
 
 template <class T>
-class Espem {
+class Espem<T> {
    public:
 	#if defined(G_B00_PZEM_MODEL_PZEM003)
             PZ003	   *pz = nullptr;
@@ -489,7 +489,7 @@ class Espem {
 };
 
 template <>
-class Espem {
+class Espem<pz004::metrics> {
    public:
         #if defined(G_B00_PZEM_MODEL_PZEM003)
             PZ003	   *pz = nullptr;
@@ -580,6 +580,9 @@ class FrameSendMQTTRaw : public FrameSendMQTT {
 		}
 	};
 };
+
+// template <class T>
+// template <>
 
 bool Espem::begin(const uart_port_t p, int rx, int tx) {
 	LOG(printf, "espem.begin: port: %d, rx_pin: %d, tx_pin:%d\n", p, rx, tx);
