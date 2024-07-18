@@ -409,7 +409,7 @@ class Espem {
 	PZ004	   *pz = nullptr;
 
 	// TimeSeries data storage
-	DataStorage ds;
+	DataStorage<pz004::metrics> ds;
 
 	 // Class constructor
 	 // uses predefined values of a ESPEM_CFG
