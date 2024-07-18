@@ -408,7 +408,7 @@ void DataStorage<pz004::metrics>::wsamples(AsyncWebServerRequest *request) {
 
 
 template <class T>
-class Espem<T> {
+class Espem {
    public:
 	#if defined(G_B00_PZEM_MODEL_PZEM003)
             PZ003	   *pz = nullptr;
@@ -489,7 +489,7 @@ class Espem<T> {
 };
 
 template <>
-class Espem<pz004::metrics> {
+class Espem {
    public:
         #if defined(G_B00_PZEM_MODEL_PZEM003)
             PZ003	   *pz = nullptr;
