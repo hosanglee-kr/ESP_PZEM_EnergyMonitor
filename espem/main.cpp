@@ -14,10 +14,10 @@
 #define FW_VERSION_MINOR	   2
 #define FW_VERSION_REVISION	   0
 
-/* make version as integer*/
+// make version as integer
 #define FW_VERSION			   ((FW_VERSION_MAJOR) << 16 | (FW_VERSION_MINOR) << 8 | (FW_VERSION_REVISION))
 
-/* make version as string*/
+// make version as string
 #define FW_VERSION_STRING	   TOSTRING(FW_VERSION_MAJOR) "." TOSTRING(FW_VERSION_MINOR) "." TOSTRING(FW_VERSION_REVISION)
 
 #define ESPEM_JSAPI_VERSION	   2
@@ -28,14 +28,6 @@
 
 #define WEBUI_PUBLISH_INTERVAL 20
 
-// #ifndef NO_GLOBAL_UPDATE
-// 	#define NO_GLOBAL_UPDATE
-// #endif
-// #ifndef FZ_WITH_ASYNCSRV
-// 	#define FZ_WITH_ASYNCSRV
-// #endif
-
-
 
 
 // Sketch configuration
@@ -45,13 +37,6 @@
 #include "globals.h"	// EmbUI macro's for LOG
 #include "uistrings.h"	// non-localized text-strings
 
-// #ifndef FZ_WITH_ASYNCSRV
-// 	#define FZ_WITH_ASYNCSRV
-// #endif
-
-// #ifndef NO_GLOBAL_UPDATE
-// 	#define NO_GLOBAL_UPDATE
-// #endif
 
 // EMBUI
 void create_parameters();  // декларируем для переопределения weak метода из фреймворка для WebUI
@@ -81,14 +66,16 @@ extern "C" int	  clock_gettime(clockid_t unused, struct timespec *tp);
 static const char PGverjson[] = "{\"ChipID\":\"%s\",\"Flash\":%u,\"SDK\":\"%s\",\"firmware\":\"" FW_NAME "\",\"version\":\"" FW_VERSION_STRING "\",\"git\":\"%s\",\"CPUMHz\":%u,\"RAM Heap size\":%u,\"RAM Heap free\":%u,\"PSRAM size\":%u,\"PSRAM free\":%u,\"Uptime\":%u}";
 
 // Our instance of espem
-Espem* espem		  = new Espem();
-////Espem* espem		  = nullptr;
+
+////Espem* espem		  		= new Espem();
+Espem* espem		  	= nullptr;
 
 
 
 // ----
 // MAIN Setup
 void setup() {
+
 	#ifdef ESPEM_DEBUG
 		ESPEM_DEBUG.begin(BAUD_RATE);  // start hw serial for debugging
 	#endif
@@ -109,9 +96,10 @@ void setup() {
 
 		// postpone TimeSeries setup until NTP aquires valid time
 		TimeProcessor::getInstance().attach_callback([]() {
-      espem->set_collector_state(mcstate_t::MC_RUN);
-      // we only need that setup once
-      TimeProcessor::getInstance().dettach_callback(); });
+				espem->set_collector_state(mcstate_t::MC_RUN);
+				// we only need that setup once
+				TimeProcessor::getInstance().dettach_callback(); 
+			});
 	}
 
 	embui.server.on("/fw", HTTP_GET, [](AsyncWebServerRequest *request) { wver(request); });
@@ -130,19 +118,23 @@ void wver(AsyncWebServerRequest *request) {
 
 	timespec tp;
 	clock_gettime(0, &tp);
+
 	snprintf_P(buff, sizeof(buff), PGverjson,
 			   ESP.getChipModel(),
 			   ESP.getFlashChipSize(),
 			   ESP.getSdkVersion(),
-#ifdef GIT_REV
-			   GIT_REV,
-#else
-			   "-",
-#endif
+
+				#ifdef GIT_REV
+					GIT_REV,
+				#else
+					"-",
+				#endif
+				
 			   ESP.getCpuFreqMHz(),
 			   ESP.getHeapSize(), ESP.getFreeHeap(),	// RAM
 			   ESP.getPsramSize(), ESP.getFreePsram(),	// PSRAM
-			   (uint32_t)tp.tv_sec);
+			   (uint32_t)tp.tv_sec
+			   );
 
 	request->send(200, FPSTR(PGmimejson), buff);
 }

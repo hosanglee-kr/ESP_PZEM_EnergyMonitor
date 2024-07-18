@@ -10,11 +10,11 @@
 #endif
 
 
-#define FW_NAME "espem"
+
 
 // LOG macro's
 #if defined(LOG)
-#undef LOG
+    #undef LOG
 #endif
 
 #if defined(ESPEM_DEBUG)
