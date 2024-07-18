@@ -652,6 +652,7 @@ bool Espem<T>::begin(const uart_port_t p, int rx, int tx) {
 	return true;
 }
 
+template <class T>
 // make a string with last-polled data (cacti poller format)
 // this is the 'compat' version for an old pzem w/o pf/HZ values
 String &Espem<T>::mktxtdata(String &txtdata) {
@@ -679,6 +680,7 @@ String &Espem<T>::mktxtdata(String &txtdata) {
 	return txtdata;
 }
 
+template <class T>
 // compat method for v 1.x cacti scripts
 void Espem<T>::wpmdata(AsyncWebServerRequest *request) {
 	if (!ds.getTSsize(1)) {
@@ -690,6 +692,7 @@ void Espem<T>::wpmdata(AsyncWebServerRequest *request) {
 	request->send(200, PGmimetxt, mktxtdata(data));
 }
 
+template <class T>
 void Espem<T>::wdatareply(AsyncWebServerRequest *request) {
 	if (!pz){
 	    return;
@@ -718,8 +721,9 @@ void Espem<T>::wdatareply(AsyncWebServerRequest *request) {
 	request->send(200, FPSTR(PGmimejson), buffer);
 }
 
+template <class T>
 // publish meter data via availbale EmbUI feeders (a periodic Task)
-void Espem::wspublish() {
+void Espem<T>::wspublish() {
 	if (!embui.feeders.available() || !pz){	// exit, if there are no clients connected
 		return;
 	}
@@ -753,7 +757,8 @@ void Espem::wspublish() {
 	interf.json_frame_flush();
 }
 
-uint8_t Espem<Y>::set_uirate(uint8_t seconds) {
+template <class T>
+uint8_t Espem<T>::set_uirate(uint8_t seconds) {
 	if (seconds) {
 		t_uiupdater.setInterval(seconds * TASK_SECOND);
 		t_uiupdater.restartDelayed();
@@ -763,6 +768,7 @@ uint8_t Espem<Y>::set_uirate(uint8_t seconds) {
 	return seconds;
 }
 
+template <class T>
 uint8_t Espem<T>::get_uirate() {
 	if (t_uiupdater.isEnabled())
 		return (t_uiupdater.getInterval() / TASK_SECOND);
@@ -770,6 +776,7 @@ uint8_t Espem<T>::get_uirate() {
 	return 0;
 }
 
+template <class T>
 mcstate_t Espem<T>::set_collector_state(mcstate_t state) {
 	if (!pz) {
 		ts_state = mcstate_t::MC_DISABLE;
@@ -888,6 +895,8 @@ bool Espem<pz004::metrics>::begin(const uart_port_t p, int rx, int tx) {
 	return true;
 }
 
+
+template <>
 // make a string with last-polled data (cacti poller format)
 // this is the 'compat' version for an old pzem w/o pf/HZ values
 String &Espem<pz004::metrics>::mktxtdata(String &txtdata) {
@@ -915,6 +924,7 @@ String &Espem<pz004::metrics>::mktxtdata(String &txtdata) {
 	return txtdata;
 }
 
+template <>
 // compat method for v 1.x cacti scripts
 void Espem<pz004::metrics>::wpmdata(AsyncWebServerRequest *request) {
 	if (!ds.getTSsize(1)) {
@@ -926,6 +936,7 @@ void Espem<pz004::metrics>::wpmdata(AsyncWebServerRequest *request) {
 	request->send(200, PGmimetxt, mktxtdata(data));
 }
 
+template <>
 void Espem<pz004::metrics>::wdatareply(AsyncWebServerRequest *request) {
 	if (!pz){
 	    return;
@@ -954,6 +965,7 @@ void Espem<pz004::metrics>::wdatareply(AsyncWebServerRequest *request) {
 	request->send(200, FPSTR(PGmimejson), buffer);
 }
 
+template <>
 // publish meter data via availbale EmbUI feeders (a periodic Task)
 void Espem<pz004::metrics>::wspublish() {
 	if (!embui.feeders.available() || !pz){	// exit, if there are no clients connected
@@ -989,6 +1001,7 @@ void Espem<pz004::metrics>::wspublish() {
 	interf.json_frame_flush();
 }
 
+template <>
 uint8_t Espem<pz004::metrics>::set_uirate(uint8_t seconds) {
 	if (seconds) {
 		t_uiupdater.setInterval(seconds * TASK_SECOND);
@@ -1006,6 +1019,7 @@ uint8_t Espem<pz004::metrics>::get_uirate() {
 	return 0;
 }
 
+template <>
 mcstate_t Espem<pz004::metrics>::set_collector_state(mcstate_t state) {
 	if (!pz) {
 		ts_state = mcstate_t::MC_DISABLE;
