@@ -404,6 +404,85 @@ void DataStorage<pz004::metrics>::wsamples(AsyncWebServerRequest *request) {
 	request->send(response);
 }
 
+
+template <class T>
+class Espem {
+   public:
+	PZ003 *pz = nullptr;
+
+	// TimeSeries data storage
+	DataStorage<T> ds;
+
+	 // Class constructor
+	 // uses predefined values of a ESPEM_CFG
+	Espem() {
+	}
+
+	~Espem() {
+		ts.deleteTask(t_uiupdater);
+		delete pz;
+		pz = nullptr;
+		delete qport;
+		qport = nullptr;
+	}
+
+	bool begin(const uart_port_t p, int rx = UART_PIN_NO_CHANGE, int tx = UART_PIN_NO_CHANGE);
+
+	// @brief onNetIfUp - коллбек для внешнего события "сеть доступна" 
+	void onNetIfUp();
+
+	// @brief onNetIfDown - коллбек для внешнего события "сеть НЕ доступна"
+	void onNetIfDown();
+
+	// @brief - HTTP request callback with latest polled data (as json)
+	void wdatareply(AsyncWebServerRequest *request);
+
+	void wpmdata(AsyncWebServerRequest *request);
+
+	 // @brief - set webUI refresh rate in seconds
+	 // @param seconds - webUI interval
+	uint8_t set_uirate(uint8_t seconds);
+
+	// @brief Get the ui refresh rate
+	// @return uint8_t
+	uint8_t get_uirate();  // TaskScheduler class does not allow it to declare const'ness
+
+	// @brief - Control meter polling
+	// @param active - enable/disable
+	// @return - current state
+	bool	meterPolling(bool active) {
+		   return pz->autopoll(active);
+	};
+	bool meterPolling() const {
+		return pz->autopoll();
+	};
+
+	mcstate_t set_collector_state(mcstate_t state);
+	mcstate_t get_collector_state() const {
+		return ts_state;
+	};
+
+   private:
+	UartQ	 *qport	   = nullptr;
+	mcstate_t ts_state = mcstate_t::MC_DISABLE;
+	// Tasks
+	Task	  t_uiupdater;
+
+	// mqtt feeder id
+	int		  _mqtt_feed_id{0};
+
+	String	 &mktxtdata(String &txtdata);
+
+	// @brief publish updates to websocket clients
+	void	  wspublish();
+
+	// make json string out of array provided
+	// bool W - include energy counter in json
+	// todo: provide vector with flags for each field
+	// String& mkjsondata( const float result[], const unsigned long tstamp, String& jsn, const bool W );
+};
+
+template <>
 class Espem {
    public:
 	PZ004	   *pz = nullptr;
