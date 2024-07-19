@@ -764,10 +764,10 @@ void Espem<T>::wspublish() {
 	doc["I"]	= m->current;
 	doc["P"]	= m->power;
 	doc["W"]	= m->energy + ds.getEnergyOffset();
-	#if defined(G_B00_PZEM_MODEL_PZEM004V3)
-	    doc["Pf"]	= m->pf;
-	    doc["freq"]	= m->freq;
-	#endif
+	// #if defined(G_B00_PZEM_MODEL_PZEM004V3)
+	//   doc["Pf"]	= m->pf;
+	//    doc["freq"]	= m->freq;
+	// #endif
 
 	Interface interf(&embui.feeders);
 	// Interface interf(&embui.feeders, 128);
