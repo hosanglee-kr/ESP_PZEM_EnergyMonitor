@@ -681,10 +681,11 @@ String &Espem<T>::mktxtdata(String &txtdata) {
 	#if defined(G_B00_PZEM_MODEL_PZEM003)
             // pmeterData pdata = meter->getData();
 	    const auto m = pz->getMetricsPZ003();
-	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
-            // pmeterData pdata = meter->getData();
-	    const auto m = pz->getMetricsPZ004();
 	#endif
+	//#if defined(G_B00_PZEM_MODEL_PZEM004V3)
+        //    // pmeterData pdata = meter->getData();
+	//    const auto m = pz->getMetricsPZ004();
+	//#endif
 
 	txtdata	 = "U:";
 	txtdata += m->voltage / 10;
@@ -719,9 +720,10 @@ void Espem<T>::wdatareply(AsyncWebServerRequest *request) {
 
 	#if defined(G_B00_PZEM_MODEL_PZEM003)
 	    const auto m = pz->getMetricsPZ003();
-	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
-	    const auto m = pz->getMetricsPZ004();
 	#endif
+	//#if defined(G_B00_PZEM_MODEL_PZEM004V3)
+	//    const auto m = pz->getMetricsPZ004();
+	//#endif
 	//const auto m = pz->getMetricsPZ004();
 	
 	char	   buffer[JSON_SMPL_LEN];
@@ -749,9 +751,10 @@ void Espem<T>::wspublish() {
 
 	#if defined(G_B00_PZEM_MODEL_PZEM003)
 	    const auto m = pz->getMetricsPZ003();
-	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
-	    const auto m = pz->getMetricsPZ004();
 	#endif
+	//#if defined(G_B00_PZEM_MODEL_PZEM004V3)
+	//    const auto m = pz->getMetricsPZ004();
+	//#endif
 
 	JsonDocument  doc;
 	JsonObject obj  = doc.to<JsonObject>();
@@ -811,8 +814,9 @@ mcstate_t Espem<T>::set_collector_state(mcstate_t state) {
 			pz->attach_rx_callback([this](uint8_t id, const RX_msg *m) {
 				// collect time-series data
 				if (!pz->getState()->dataStale()) {
-				    //#if defined(G_B00_PZEM_MODEL_PZEM003)
+				    #if defined(G_B00_PZEM_MODEL_PZEM003)
 					ds.push(*(pz->getMetricsPZ003()), time(nullptr));
+				    #endif
 				    // #elif defined(G_B00_PZEM_MODEL_PZEM004V3)
 				    //    ds.push(*(pz->getMetricsPZ004()), time(nullptr));
 				    // #endif
@@ -924,10 +928,10 @@ String &Espem<pz004::metrics>::mktxtdata(String &txtdata) {
 	if (!pz)
 		return txtdata;
 
-	#if defined(G_B00_PZEM_MODEL_PZEM003)
-            // pmeterData pdata = meter->getData();
-	    const auto m = pz->getMetricsPZ003();
-	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+	//#if defined(G_B00_PZEM_MODEL_PZEM003)
+        //    // pmeterData pdata = meter->getData();
+	//    const auto m = pz->getMetricsPZ003();
+	#if defined(G_B00_PZEM_MODEL_PZEM004V3)
             // pmeterData pdata = meter->getData();
 	    const auto m = pz->getMetricsPZ004();
 	#endif
@@ -1061,9 +1065,9 @@ mcstate_t Espem<pz004::metrics>::set_collector_state(mcstate_t state) {
 				if (!pz->getState()->dataStale()) {
 				    // #if defined(G_B00_PZEM_MODEL_PZEM003)
 	                            //     ds.push(*(pz->getMetricsPZ003()), time(nullptr));
-	                            // #elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+	                            if defined(G_B00_PZEM_MODEL_PZEM004V3)
 	                                ds.push(*(pz->getMetricsPZ004()), time(nullptr));
-	                            // #endif	
+	                            #endif	
 				}
 				#ifdef ESPEM_DEBUG
 					if (m) {
