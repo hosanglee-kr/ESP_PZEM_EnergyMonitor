@@ -811,11 +811,11 @@ mcstate_t Espem<T>::set_collector_state(mcstate_t state) {
 			pz->attach_rx_callback([this](uint8_t id, const RX_msg *m) {
 				// collect time-series data
 				if (!pz->getState()->dataStale()) {
-				    #if defined(G_B00_PZEM_MODEL_PZEM003)
-						ds.push(*(pz->getMetricsPZ003()), time(nullptr));
-					#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
-						ds.push(*(pz->getMetricsPZ004()), time(nullptr));
-					#endif
+				    //#if defined(G_B00_PZEM_MODEL_PZEM003)
+					ds.push(*(pz->getMetricsPZ003()), time(nullptr));
+				    // #elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+				    //    ds.push(*(pz->getMetricsPZ004()), time(nullptr));
+				    // #endif
 					
 				}
 				#ifdef ESPEM_DEBUG
@@ -1059,11 +1059,11 @@ mcstate_t Espem<pz004::metrics>::set_collector_state(mcstate_t state) {
 			pz->attach_rx_callback([this](uint8_t id, const RX_msg *m) {
 				// collect time-series data
 				if (!pz->getState()->dataStale()) {
-				    #if defined(G_B00_PZEM_MODEL_PZEM003)
-	                                ds.push(*(pz->getMetricsPZ003()), time(nullptr));
-	                            #elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+				    // #if defined(G_B00_PZEM_MODEL_PZEM003)
+	                            //     ds.push(*(pz->getMetricsPZ003()), time(nullptr));
+	                            // #elif defined(G_B00_PZEM_MODEL_PZEM004V3)
 	                                ds.push(*(pz->getMetricsPZ004()), time(nullptr));
-	                            #endif	
+	                            // #endif	
 				}
 				#ifdef ESPEM_DEBUG
 					if (m) {
