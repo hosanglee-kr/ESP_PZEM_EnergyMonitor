@@ -154,7 +154,13 @@ void ui_page_espem(Interface *interf, const JsonObject *data, const char *action
 
 	// Plain values display
 	interf->json_section_line();  // "Live controls"
-	auto *m = espem->pz->getMetricsPZ004();
+
+	#if defined(G_B00_PZEM_MODEL_PZEM003)
+	   auto *m = espem->pz->getMetricsPZ003();
+	#endif
+	#if defined(G_B00_PZEM_MODEL_PZEM004V3)
+	   auto *m = espem->pz->getMetricsPZ004();
+	#endif
 
 	// Widgets & left side menu
 	// id, type, value, label, param

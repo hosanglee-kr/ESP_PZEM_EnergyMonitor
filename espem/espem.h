@@ -681,10 +681,11 @@ String &Espem<T>::mktxtdata(String &txtdata) {
 	#if defined(G_B00_PZEM_MODEL_PZEM003)
             // pmeterData pdata = meter->getData();
 	    const auto m = pz->getMetricsPZ003();
-	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
-            // pmeterData pdata = meter->getData();
-	    const auto m = pz->getMetricsPZ004();
-	#endif
+	
+	//#if defined(G_B00_PZEM_MODEL_PZEM004V3)
+        //    // pmeterData pdata = meter->getData();
+	//    const auto m = pz->getMetricsPZ004();
+	//#endif
 
 	txtdata	 = "U:";
 	txtdata += m->voltage / 10;
@@ -696,6 +697,7 @@ String &Espem<T>::mktxtdata(String &txtdata) {
 	txtdata += m->asFloat(meter_t::enrg);
 	//    txtdata += " pf:";
 	//    txtdata += pfcalc(meter->getData().meterings);
+	#endif
 	return txtdata;
 }
 
@@ -719,9 +721,10 @@ void Espem<T>::wdatareply(AsyncWebServerRequest *request) {
 
 	#if defined(G_B00_PZEM_MODEL_PZEM003)
 	    const auto m = pz->getMetricsPZ003();
-	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
-	    const auto m = pz->getMetricsPZ004();
-	#endif
+	
+	//#if defined(G_B00_PZEM_MODEL_PZEM004V3)
+	//    const auto m = pz->getMetricsPZ004();
+	//#endif
 	//const auto m = pz->getMetricsPZ004();
 	
 	char	   buffer[JSON_SMPL_LEN];
@@ -738,6 +741,8 @@ void Espem<T>::wdatareply(AsyncWebServerRequest *request) {
 				#endif
 	        );
 	request->send(200, FPSTR(PGmimejson), buffer);
+	#endif
+	
 }
 
 template <class T>
@@ -749,9 +754,10 @@ void Espem<T>::wspublish() {
 
 	#if defined(G_B00_PZEM_MODEL_PZEM003)
 	    const auto m = pz->getMetricsPZ003();
-	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
-	    const auto m = pz->getMetricsPZ004();
-	#endif
+	
+	//#if defined(G_B00_PZEM_MODEL_PZEM004V3)
+	//    const auto m = pz->getMetricsPZ004();
+	//#endif
 
 	JsonDocument  doc;
 	JsonObject obj  = doc.to<JsonObject>();
@@ -761,10 +767,10 @@ void Espem<T>::wspublish() {
 	doc["I"]	= m->current;
 	doc["P"]	= m->power;
 	doc["W"]	= m->energy + ds.getEnergyOffset();
-	#if defined(G_B00_PZEM_MODEL_PZEM004V3)
-	    doc["Pf"]	= m->pf;
-	    doc["freq"]	= m->freq;
-	#endif
+	// #if defined(G_B00_PZEM_MODEL_PZEM004V3)
+	//   doc["Pf"]	= m->pf;
+	//    doc["freq"]	= m->freq;
+	// #endif
 
 	Interface interf(&embui.feeders);
 	// Interface interf(&embui.feeders, 128);
@@ -774,6 +780,7 @@ void Espem<T>::wspublish() {
 	// interf.jobject(doc, true);
 
 	interf.json_frame_flush();
+	#endif
 }
 
 template <class T>
@@ -812,10 +819,11 @@ mcstate_t Espem<T>::set_collector_state(mcstate_t state) {
 				// collect time-series data
 				if (!pz->getState()->dataStale()) {
 				    #if defined(G_B00_PZEM_MODEL_PZEM003)
-						ds.push(*(pz->getMetricsPZ003()), time(nullptr));
-					#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
-						ds.push(*(pz->getMetricsPZ004()), time(nullptr));
-					#endif
+					ds.push(*(pz->getMetricsPZ003()), time(nullptr));
+				    #endif
+				    // #elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+				    //    ds.push(*(pz->getMetricsPZ004()), time(nullptr));
+				    // #endif
 					
 				}
 				#ifdef ESPEM_DEBUG
@@ -924,24 +932,25 @@ String &Espem<pz004::metrics>::mktxtdata(String &txtdata) {
 	if (!pz)
 		return txtdata;
 
-	#if defined(G_B00_PZEM_MODEL_PZEM003)
-            // pmeterData pdata = meter->getData();
-	    const auto m = pz->getMetricsPZ003();
-	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+	//#if defined(G_B00_PZEM_MODEL_PZEM003)
+        //    // pmeterData pdata = meter->getData();
+	//    const auto m = pz->getMetricsPZ003();
+	#if defined(G_B00_PZEM_MODEL_PZEM004V3)
             // pmeterData pdata = meter->getData();
 	    const auto m = pz->getMetricsPZ004();
-	#endif
+	
 
-	txtdata	 = "U:";
-	txtdata += m->voltage / 10;
-	txtdata += " I:";
-	txtdata += m->current / 1000;
-	txtdata += " P:";
-	txtdata += m->asFloat(meter_t::pwr) + ds.getEnergyOffset();
-	txtdata += " W:";
-	txtdata += m->asFloat(meter_t::enrg);
-	//    txtdata += " pf:";
-	//    txtdata += pfcalc(meter->getData().meterings);
+	  txtdata	 = "U:";
+          txtdata += m->voltage / 10;
+	  txtdata += " I:";
+	  txtdata += m->current / 1000;
+	  txtdata += " P:";
+          txtdata += m->asFloat(meter_t::pwr) + ds.getEnergyOffset();
+	  txtdata += " W:";
+	  txtdata += m->asFloat(meter_t::enrg);
+	  //    txtdata += " pf:";
+	  //    txtdata += pfcalc(meter->getData().meterings);
+	#endif
 	return txtdata;
 }
 
@@ -1059,9 +1068,9 @@ mcstate_t Espem<pz004::metrics>::set_collector_state(mcstate_t state) {
 			pz->attach_rx_callback([this](uint8_t id, const RX_msg *m) {
 				// collect time-series data
 				if (!pz->getState()->dataStale()) {
-				    #if defined(G_B00_PZEM_MODEL_PZEM003)
-	                                ds.push(*(pz->getMetricsPZ003()), time(nullptr));
-	                            #elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+				    // #if defined(G_B00_PZEM_MODEL_PZEM003)
+	                            //     ds.push(*(pz->getMetricsPZ003()), time(nullptr));
+	                            #if defined(G_B00_PZEM_MODEL_PZEM004V3)
 	                                ds.push(*(pz->getMetricsPZ004()), time(nullptr));
 	                            #endif	
 				}

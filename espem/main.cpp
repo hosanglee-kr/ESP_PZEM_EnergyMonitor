@@ -29,8 +29,8 @@
 #define WEBUI_PUBLISH_INTERVAL 20
 
 
-// #define 	G_B00_PZEM_MODEL_PZEM003			1
-#define 	G_B00_PZEM_MODEL_PZEM004V3 
+//#define     G_B00_PZEM_MODEL_PZEM003			1
+//#define     G_B00_PZEM_MODEL_PZEM004V3 
 
 #define     G_B00_PZEM_DUMMY
 
@@ -98,10 +98,10 @@ void setup() {
 	// create and run ESPEM object
 
 	#if defined(G_B00_PZEM_MODEL_PZEM003)
-        Espem<pz003::metrics> *espem = new Espem<pz003::metrics>();
+            Espem<pz003::metrics> *espem = new Espem<pz003::metrics>();
 		////espem = new Espem();
 	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
-        Espem<pz004::metrics> *espem = new Espem<pz004::metrics>();
+            Espem<pz004::metrics> *espem = new Espem<pz004::metrics>();
 		////espem = new Espem();
 	#endif
 
