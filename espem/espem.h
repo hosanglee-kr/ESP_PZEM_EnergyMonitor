@@ -49,10 +49,7 @@ extern Scheduler ts;
 // sprintf template for json sampling data
 #define 		JSON_SMPL_LEN			85	 	// {"t":1615496537000,"U":229.50,"I":1.47,"P":1216,"W":5811338,"hz":50.0,"pF":0.64},
 
-// #define 	G_B00_PZEM_MODEL_PZEM003			1
-#define 	G_B00_PZEM_MODEL_PZEM004V3 
 
-#define         G_B00_PZEM_DUMMY
 
 #if  defined(G_B00_PZEM_MODEL_PZEM003)
     static const char	PGsmpljsontpl[] PROGMEM 	= "{\"t\":%u000,\"U\":%.2f,\"I\":%.2f,\"P\":%.0f,\"W\":%.0f},";
@@ -78,6 +75,21 @@ void block_menu(Interface *interf);
 void msgdebug(uint8_t id, const RX_msg *m);
 
 using namespace pzmbus;	 // use general pzem abstractions
+
+///////////////////
+
+class FrameSendMQTTRaw : public FrameSendMQTT {
+   public:
+	FrameSendMQTTRaw(EmbUI *emb)
+		: FrameSendMQTT(emb) {
+	}
+	void send(const JsonVariantConst &data) override {
+		if (data[P_pkg] == C_espem) {
+			_eu->publish(C_mqtt_pzem_jmetrics, data[P_block]);
+		}
+	};
+};
+
 
 ////////////////
 template <class T>
@@ -406,6 +418,7 @@ void DataStorage<pz004::metrics>::wsamples(AsyncWebServerRequest *request) {
 	request->send(response);
 }
 
+/////////////////////////////////////////////////////////////////////////
 
 template <class T>
 class Espem {
@@ -489,8 +502,9 @@ class Espem {
 	// String& mkjsondata( const float result[], const unsigned long tstamp, String& jsn, const bool W );
 };
 
+
 template <>
-class Espem {
+class Espem<pz004::metrics> {
    public:
         #if defined(G_B00_PZEM_MODEL_PZEM003)
             PZ003	   *pz = nullptr;
@@ -501,10 +515,9 @@ class Espem {
 	// TimeSeries data storage
 	DataStorage<pz004::metrics> ds;
 
-	 // Class constructor
-	 // uses predefined values of a ESPEM_CFG
-	Espem() {
-	}
+	// Class constructor
+	// uses predefined values of a ESPEM_CFG
+	Espem(){};
 
 	~Espem() {
 		ts.deleteTask(t_uiupdater);
@@ -570,17 +583,21 @@ class Espem {
 	// String& mkjsondata( const float result[], const unsigned long tstamp, String& jsn, const bool W );
 };
 
-class FrameSendMQTTRaw : public FrameSendMQTT {
-   public:
-	FrameSendMQTTRaw(EmbUI *emb)
-		: FrameSendMQTT(emb) {
-	}
-	void send(const JsonVariantConst &data) override {
-		if (data[P_pkg] == C_espem) {
-			_eu->publish(C_mqtt_pzem_jmetrics, data[P_block]);
-		}
-	};
-};
+
+
+
+// template <>
+// void Espem<pz004::metrics>::wpmdata(AsyncWebServerRequest *request);
+
+// template <>
+// void Espem<pz004::metrics>::wdatareply(AsyncWebServerRequest *request);
+
+// template <>
+// void Espem<pz004::metrics>::wspublish();
+
+// template <>
+// uint8_t Espem<pz004::metrics>::get_uirate();
+
 
 template <class T>
 bool Espem<T>::begin(const uart_port_t p, int rx, int tx) {
@@ -588,8 +605,9 @@ bool Espem<T>::begin(const uart_port_t p, int rx, int tx) {
 
 	// let's make our begin idempotent )
 	if (qport) {
-		if (pz)
+		if (pz){
 			pz->detachMsgQ();
+		}
 
 		delete qport;
 		qport = nullptr;
@@ -605,18 +623,18 @@ bool Espem<T>::begin(const uart_port_t p, int rx, int tx) {
 	}
 
 
-        #if defined(G_B00_PZEM_MODEL_PZEM003)
-            #ifdef G_B00_PZEM_DUMMY
+    #if defined(G_B00_PZEM_MODEL_PZEM003)
+        #ifdef G_B00_PZEM_DUMMY
 	        pz = new DummyPZ003(PZEM_ID, ADDR_ANY);
-            #else
+        #else
 	        pz = new PZ003(PZEM_ID, ADDR_ANY);
-            #endif
+        #endif
 	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
 	    #ifdef G_B00_PZEM_DUMMY
 	        pz = new DummyPZ004(PZEM_ID, ADDR_ANY);
-            #else
+        #else
 	        pz = new PZ004(PZEM_ID, ADDR_ANY);
-            #endif
+        #endif
 	#endif
 	
 	if (!pz) return false;	// failed to create obj
@@ -681,8 +699,8 @@ String &Espem<T>::mktxtdata(String &txtdata) {
 	return txtdata;
 }
 
-template <class T>
 // compat method for v 1.x cacti scripts
+template <class T>
 void Espem<T>::wpmdata(AsyncWebServerRequest *request) {
 	if (!ds.getTSsize(1)) {
 		request->send(503, PGmimetxt, PGdre);
@@ -708,17 +726,17 @@ void Espem<T>::wdatareply(AsyncWebServerRequest *request) {
 	
 	char	   buffer[JSON_SMPL_LEN];
 	sprintf_P(buffer, PGdatajsontpl
-			  , pz->getState()->dataAge()
-			  , m->asFloat(meter_t::vol)
-			  , m->asFloat(meter_t::cur)
-			  , m->asFloat(meter_t::pwr)
-			  , m->asFloat(meter_t::enrg) + ds.getEnergyOffset()
-		          
-	                  #if defined(G_B00_PZEM_MODEL_PZEM004V3)
-	                      , m->asFloat(meter_t::frq)
-			      , m->asFloat(meter_t::pf)
-	                  #endif
-	                  );
+				, pz->getState()->dataAge()
+				, m->asFloat(meter_t::vol)
+				, m->asFloat(meter_t::cur)
+				, m->asFloat(meter_t::pwr)
+				, m->asFloat(meter_t::enrg) + ds.getEnergyOffset()
+
+				#if defined(G_B00_PZEM_MODEL_PZEM004V3)
+					, m->asFloat(meter_t::frq)
+					, m->asFloat(meter_t::pf)
+				#endif
+	        );
 	request->send(200, FPSTR(PGmimejson), buffer);
 }
 
@@ -794,10 +812,10 @@ mcstate_t Espem<T>::set_collector_state(mcstate_t state) {
 				// collect time-series data
 				if (!pz->getState()->dataStale()) {
 				    #if defined(G_B00_PZEM_MODEL_PZEM003)
-	                                ds.push(*(pz->getMetricsPZ003()), time(nullptr));
-	                            #elif defined(G_B00_PZEM_MODEL_PZEM004V3)
-	                                ds.push(*(pz->getMetricsPZ004()), time(nullptr));
-	                            #endif
+						ds.push(*(pz->getMetricsPZ003()), time(nullptr));
+					#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+						ds.push(*(pz->getMetricsPZ004()), time(nullptr));
+					#endif
 					
 				}
 				#ifdef ESPEM_DEBUG
@@ -825,9 +843,10 @@ mcstate_t Espem<T>::set_collector_state(mcstate_t state) {
 
 //////////
 
-template <>
+
+//template <>
 bool Espem<pz004::metrics>::begin(const uart_port_t p, int rx, int tx) {
-	LOG(printf, "espem.begin: port: %d, rx_pin: %d, tx_pin:%d\n", p, rx, tx);
+    LOG(printf, "espem.begin: port: %d, rx_pin: %d, tx_pin:%d\n", p, rx, tx);
 
 	// let's make our begin idempotent )
 	if (qport) {
@@ -897,9 +916,10 @@ bool Espem<pz004::metrics>::begin(const uart_port_t p, int rx, int tx) {
 }
 
 
-template <>
+
 // make a string with last-polled data (cacti poller format)
 // this is the 'compat' version for an old pzem w/o pf/HZ values
+//template <>
 String &Espem<pz004::metrics>::mktxtdata(String &txtdata) {
 	if (!pz)
 		return txtdata;
@@ -925,8 +945,10 @@ String &Espem<pz004::metrics>::mktxtdata(String &txtdata) {
 	return txtdata;
 }
 
-template <>
+
+
 // compat method for v 1.x cacti scripts
+//template <>
 void Espem<pz004::metrics>::wpmdata(AsyncWebServerRequest *request) {
 	if (!ds.getTSsize(1)) {
 		request->send(503, PGmimetxt, PGdre);
@@ -937,7 +959,7 @@ void Espem<pz004::metrics>::wpmdata(AsyncWebServerRequest *request) {
 	request->send(200, PGmimetxt, mktxtdata(data));
 }
 
-template <>
+//template <>
 void Espem<pz004::metrics>::wdatareply(AsyncWebServerRequest *request) {
 	if (!pz){
 	    return;
@@ -966,7 +988,7 @@ void Espem<pz004::metrics>::wdatareply(AsyncWebServerRequest *request) {
 	request->send(200, FPSTR(PGmimejson), buffer);
 }
 
-template <>
+//template <>
 // publish meter data via availbale EmbUI feeders (a periodic Task)
 void Espem<pz004::metrics>::wspublish() {
 	if (!embui.feeders.available() || !pz){	// exit, if there are no clients connected
@@ -1002,7 +1024,7 @@ void Espem<pz004::metrics>::wspublish() {
 	interf.json_frame_flush();
 }
 
-template <>
+//template <>
 uint8_t Espem<pz004::metrics>::set_uirate(uint8_t seconds) {
 	if (seconds) {
 		t_uiupdater.setInterval(seconds * TASK_SECOND);
@@ -1013,6 +1035,7 @@ uint8_t Espem<pz004::metrics>::set_uirate(uint8_t seconds) {
 	return seconds;
 }
 
+//template <>
 uint8_t Espem<pz004::metrics>::get_uirate() {
 	if (t_uiupdater.isEnabled())
 		return (t_uiupdater.getInterval() / TASK_SECOND);
@@ -1020,7 +1043,7 @@ uint8_t Espem<pz004::metrics>::get_uirate() {
 	return 0;
 }
 
-template <>
+//template <>
 mcstate_t Espem<pz004::metrics>::set_collector_state(mcstate_t state) {
 	if (!pz) {
 		ts_state = mcstate_t::MC_DISABLE;
@@ -1064,6 +1087,10 @@ mcstate_t Espem<pz004::metrics>::set_collector_state(mcstate_t state) {
 	}
 	return ts_state;
 }
+
+
+
+
 
 void msgdebug(uint8_t id, const RX_msg *m) {
 	Serial.printf("\nCallback triggered for PZEM ID: %d\n", id);
