@@ -59,7 +59,8 @@ jobs:
           #platformio pkg update
       - name: Run PlatformIO
         run: |
-          pio run -e espem -e espem_debug
+          pio run -e espem-PZEM003 -e espem-PZEM004
+          # pio run -e espem -e espem_debug
 #      env: 
 #        PLATFORMIO_CI_SRC: ${{ matrix.code }}
 #      run: |
