@@ -1065,7 +1065,7 @@ mcstate_t Espem<pz004::metrics>::set_collector_state(mcstate_t state) {
 				if (!pz->getState()->dataStale()) {
 				    // #if defined(G_B00_PZEM_MODEL_PZEM003)
 	                            //     ds.push(*(pz->getMetricsPZ003()), time(nullptr));
-	                            if defined(G_B00_PZEM_MODEL_PZEM004V3)
+	                            #if defined(G_B00_PZEM_MODEL_PZEM004V3)
 	                                ds.push(*(pz->getMetricsPZ004()), time(nullptr));
 	                            #endif	
 				}
