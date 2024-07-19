@@ -31,7 +31,15 @@ void pubCallback(Interface *interf);
 
 #define MAX_UI_UPDATE_RATE 30
 
-extern Espem	  *espem;
+
+#if defined(G_B00_PZEM_MODEL_PZEM003)
+	extern Espem<pz003::metrics> *espem;
+	//extern Espem	  *espem;
+#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+	extern Espem<pz004::metrics> *espem;
+	//extern Espem	  *espem;
+#endif 
+
 
 static const char *chart_css = "graphwide";
 

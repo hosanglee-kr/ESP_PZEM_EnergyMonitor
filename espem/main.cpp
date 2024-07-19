@@ -29,6 +29,11 @@
 #define WEBUI_PUBLISH_INTERVAL 20
 
 
+// #define 	G_B00_PZEM_MODEL_PZEM003			1
+#define 	G_B00_PZEM_MODEL_PZEM004V3 
+
+#define     G_B00_PZEM_DUMMY
+
 
 // Sketch configuration
 #include <ESPAsyncWebServer.h>
@@ -67,10 +72,14 @@ static const char PGverjson[] = "{\"ChipID\":\"%s\",\"Flash\":%u,\"SDK\":\"%s\",
 
 // Our instance of espem
 
-////Espem* espem		  		= new Espem();
-Espem* espem		  	= nullptr;
+#if  defined(G_B00_PZEM_MODEL_PZEM003)
+	Espem<pz003::metrics> *espem = nullptr;
+	////Espem* espem		 = new Espem();
+	//Espem* espem		  	= nullptr;
 
-
+#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+	Espem<pz004::metrics> *espem = nullptr;
+#endif 
 
 // ----
 // MAIN Setup
@@ -87,7 +96,16 @@ void setup() {
 	embui_actions_register();
 
 	// create and run ESPEM object
-	espem = new Espem();
+
+	#if defined(G_B00_PZEM_MODEL_PZEM003)
+        Espem<pz003::metrics> *espem = new Espem<pz003::metrics>();
+		////espem = new Espem();
+	#elif defined(G_B00_PZEM_MODEL_PZEM004V3)
+        Espem<pz004::metrics> *espem = new Espem<pz004::metrics>();
+		////espem = new Espem();
+	#endif
+
+	
 
 	if (espem && espem->begin(embui.paramVariant(V_UART),
 							  embui.paramVariant(V_RX),
@@ -95,8 +113,11 @@ void setup() {
 		espem->ds.setEnergyOffset(embui.paramVariant(V_EOFFSET));
 
 		// postpone TimeSeries setup until NTP aquires valid time
-		TimeProcessor::getInstance().attach_callback([]() {
-				espem->set_collector_state(mcstate_t::MC_RUN);
+		TimeProcessor::getInstance().attach_callback([espem]() {
+		/////TimeProcessor::getInstance().attach_callback([]() {
+				if(espem){
+					espem->set_collector_state(mcstate_t::MC_RUN);
+				}
 				// we only need that setup once
 				TimeProcessor::getInstance().dettach_callback(); 
 			});
