@@ -458,15 +458,16 @@ class Espem {
 	// @return - current state
 	bool	meterPolling(bool active) {
 	    return pz->autopoll(active);
-	};
+	}
+
 	bool meterPolling() const {
 	    return pz->autopoll();
-	};
+	}
 
 	mcstate_t set_collector_state(mcstate_t state);
 	mcstate_t get_collector_state() const {
 	    return ts_state;
-	};
+	}
 
    private:
 	UartQ	 *qport	   = nullptr;
