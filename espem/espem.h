@@ -681,7 +681,7 @@ String &Espem<T>::mktxtdata(String &txtdata) {
 	#if defined(G_B00_PZEM_MODEL_PZEM003)
             // pmeterData pdata = meter->getData();
 	    const auto m = pz->getMetricsPZ003();
-	#endif
+	
 	//#if defined(G_B00_PZEM_MODEL_PZEM004V3)
         //    // pmeterData pdata = meter->getData();
 	//    const auto m = pz->getMetricsPZ004();
@@ -697,6 +697,7 @@ String &Espem<T>::mktxtdata(String &txtdata) {
 	txtdata += m->asFloat(meter_t::enrg);
 	//    txtdata += " pf:";
 	//    txtdata += pfcalc(meter->getData().meterings);
+	#endif
 	return txtdata;
 }
 
@@ -720,7 +721,7 @@ void Espem<T>::wdatareply(AsyncWebServerRequest *request) {
 
 	#if defined(G_B00_PZEM_MODEL_PZEM003)
 	    const auto m = pz->getMetricsPZ003();
-	#endif
+	
 	//#if defined(G_B00_PZEM_MODEL_PZEM004V3)
 	//    const auto m = pz->getMetricsPZ004();
 	//#endif
@@ -740,6 +741,8 @@ void Espem<T>::wdatareply(AsyncWebServerRequest *request) {
 				#endif
 	        );
 	request->send(200, FPSTR(PGmimejson), buffer);
+	#endif
+	
 }
 
 template <class T>
@@ -751,7 +754,7 @@ void Espem<T>::wspublish() {
 
 	#if defined(G_B00_PZEM_MODEL_PZEM003)
 	    const auto m = pz->getMetricsPZ003();
-	#endif
+	
 	//#if defined(G_B00_PZEM_MODEL_PZEM004V3)
 	//    const auto m = pz->getMetricsPZ004();
 	//#endif
@@ -777,6 +780,7 @@ void Espem<T>::wspublish() {
 	// interf.jobject(doc, true);
 
 	interf.json_frame_flush();
+	#endif
 }
 
 template <class T>
@@ -934,18 +938,19 @@ String &Espem<pz004::metrics>::mktxtdata(String &txtdata) {
 	#if defined(G_B00_PZEM_MODEL_PZEM004V3)
             // pmeterData pdata = meter->getData();
 	    const auto m = pz->getMetricsPZ004();
-	#endif
+	
 
-	txtdata	 = "U:";
-	txtdata += m->voltage / 10;
-	txtdata += " I:";
-	txtdata += m->current / 1000;
-	txtdata += " P:";
-	txtdata += m->asFloat(meter_t::pwr) + ds.getEnergyOffset();
-	txtdata += " W:";
-	txtdata += m->asFloat(meter_t::enrg);
-	//    txtdata += " pf:";
-	//    txtdata += pfcalc(meter->getData().meterings);
+	  txtdata	 = "U:";
+          txtdata += m->voltage / 10;
+	  txtdata += " I:";
+	  txtdata += m->current / 1000;
+	  txtdata += " P:";
+          txtdata += m->asFloat(meter_t::pwr) + ds.getEnergyOffset();
+	  txtdata += " W:";
+	  txtdata += m->asFloat(meter_t::enrg);
+	  //    txtdata += " pf:";
+	  //    txtdata += pfcalc(meter->getData().meterings);
+	#endif
 	return txtdata;
 }
 
