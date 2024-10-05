@@ -23,46 +23,84 @@ on:
       - '**.c'
       - '**.ini'
       - '**.yml'
-
 jobs:
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        environments:
+          - "espem-PZEM003"
+          - "espem-PZEM004"
+          - "espem_debug-PZEM003"
+          - "espem_dummy-PZEM003"
 
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        code:
-          - "."
 
     steps:
-      - uses: actions/checkout@v3
-      - name: PIO Cache
-        id: cache-pio
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-pio-pkgs
+      - uses: actions/checkout@v4
+
+      - name: Cache pip
+        uses: actions/cache@v4
         with:
-          path: |
-            ~/.cache/pip
-            ~/.platformio/.cache
-          key: ${{ runner.os }}-pio-${{env.cache-name}}
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pio-
-            ${{ runner.os }}-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+            ${{ runner.os }}-pip-
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
         with:
-          python-version: '3.x'
-      - name: Install Platformio
+          path: ~/.platformio
+          key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+            python-version: '3.11'
+
+      - name: Install PlatformIO
         run: |
           python -m pip install --upgrade pip
           pip install --upgrade platformio
-          #platformio pkg update
+
       - name: Run PlatformIO
-        run: |
-          pio run -e espem-PZEM003 -e espem-PZEM004
+        env:
+          VERSION: "0.0.${{ github.event.number }}"
+        run: pio run -e ${{ matrix.environments }}
+
+      - name: Build filesystem image
+        env:
+          VERSION: "0.0.${{ github.event.number }}"
+        run: pio run -e ${{ matrix.environments }} --target buildfs  # LittleFS 파일 시스템 이미지 빌드
+        continue-on-error: true  # 오류가 발생해도 계속 실행
+
+      - name: upload artifact firmware
+        id: upload-firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.environments }}-firmware.bin
+          path: .pio/build/${{ matrix.environments }}/firmware*.bin
+
+      - name: Upload artifact littlefs
+        id: upload-littlefs
+        if: exists(.pio/build/${{ matrix.environments }}/littlefs.bin)  # 파일 존재 여부 확인
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.environments }}-littlefs.bin  # 아티팩트 이름
+          path: .pio/build/${{ matrix.environments }}/littlefs.bin  # LittleFS 바이너리 파일 경로
           
-#          pio run -e espem -e espem_debug
-#      env: 
-#        PLATFORMIO_CI_SRC: ${{ matrix.code }}
-#      run: |
-#        pio ci -c ${{ matrix.code }}/platformio.ini
+    
+          
+      - name: upload artifact partitions
+        id: upload-partitions
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.environments }}-partitions.bin
+          path: .pio/build/${{ matrix.environments }}/partitions.bin
+      - name: upload artifact bootlooder 
+        id: upload-bootloader
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.environments }}-bootloader.bin
+          path: .pio/build/${{ matrix.environments }}/bootloader.bin
+          
