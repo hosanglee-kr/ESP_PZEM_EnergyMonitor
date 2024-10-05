@@ -105,7 +105,7 @@ jobs:
       - name: Zip source code
         run: |
           echo "Zipping source code"
-          zip -r Sources.zip src
+          zip -r Sources.zip eepem
           mv Sources.zip toDeploy
           
           echo "Current directory contents:"
