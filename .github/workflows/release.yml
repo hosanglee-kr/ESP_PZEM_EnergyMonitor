@@ -32,17 +32,19 @@ jobs:
       - name: Get Environment List from platformio.ini
         id: get_envs
         run: |
-          ENV_LIST=$(grep -oP '(?<=\[env:).*?(?=\])' platformio.ini)
-          echo "ENV_LIST=$ENV_LIST" >> $GITHUB_ENV
-          echo "Available environments: $ENV_LIST"
+          ENV_LIST=$(grep -oP '(?<=\[env:).*?(?=\])' platformio.ini | tr '\n' ',')  # Join with commas
+          ENV_LIST=${ENV_LIST%,}  # Remove the trailing comma
+          echo "ENV_LIST=$ENV_LIST" >> $GITHUB_ENV  # Set the GITHUB_ENV variable
+          echo "Available environments: $ENV_LIST"  # Print the environments for logging
 
       - name: Build and Build Filesystem for Each Environment
         run: |
-          for ENV in ${{ env.ENV_LIST }}; do
+          IFS=',' read -r -a env_array <<< "${{ env.ENV_LIST }}"
+          for ENV in "${env_array[@]}"; do
             echo "Building environment: $ENV"
-            pio run -e $ENV --disable-auto-clean || echo "Build failed for environment: $ENV, continuing..."
+            pio run -e "$ENV" --disable-auto-clean || echo "Build failed for environment: $ENV, continuing..."
             echo "Building filesystem for environment: $ENV"
-            pio run -e $ENV --target buildfs --disable-auto-clean || echo "Filesystem build failed for environment: $ENV, continuing..."
+            pio run -e "$ENV" --target buildfs --disable-auto-clean || echo "Filesystem build failed for environment: $ENV, continuing..."
           done
 
       - name: Install rename
