@@ -5,15 +5,16 @@
 name: PlatformIO CI
 
 on:
-  push:
-    branches: [ dev1 ] #[ main, dev1 ]
-    paths:
-      - '**.cpp'
-      - '**.hpp'
-      - '**.h'
-      - '**.c'
-      - '**.ini'
-      - '**.yml'
+  #push:
+  #  branches: [ dev1 ] #[ main, dev1 ]
+  #  paths:
+  #    - '**.cpp'
+  #    - '**.hpp'
+  #    - '**.h'
+  #    - '**.c'
+  #    - '**.ini'
+  #    - '**.yml'
+  
   pull_request:
     branches: [ main]
     paths:
