@@ -1,4 +1,4 @@
-name: Firmware Release
+name: Firmware Release 2
 
 on:
   release:
