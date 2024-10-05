@@ -3,7 +3,6 @@
  *  It can poll/collect PowerMeter data and provide it for futher processing in text/json format
  *
  *  (c) Emil Muratov 2018 - 2023
- *
  */
 
 //#pragma once
