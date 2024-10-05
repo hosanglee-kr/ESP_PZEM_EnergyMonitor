@@ -39,12 +39,12 @@ jobs:
       - name: Run PlatformIO
         env:
           VERSION: ${{ env.version }}  # Use the version from the environment variable
-        run: pio run
+        run: pio run --disable-auto-clean
 
       - name: Build File System
         env:
           VERSION: ${{ env.version }}  # Use the version from the environment variable
-        run: pio run --target buildfs  # Add this line to build the filesystem
+        run: pio run --target buildfs --disable-auto-clean # Add this line to build the filesystem
         continue-on-error: true
 
       - name: Install rename
