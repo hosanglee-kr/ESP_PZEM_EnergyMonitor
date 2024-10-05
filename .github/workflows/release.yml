@@ -1,0 +1,134 @@
+name: Firmware Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Get Release Version
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF##*/}  # Extract the tag name from GITHUB_REF
+          echo "Version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_ENV  # Set the version as an environment variable
+
+      - name: Run PlatformIO
+        env:
+          VERSION: ${{ env.version }}  # Use the version from the environment variable
+        run: pio run
+
+      - name: Build File System
+        env:
+          VERSION: ${{ env.version }}  # Use the version from the environment variable
+        run: pio run --target buildfs  # Add this line to build the filesystem
+        continue-on-error: true
+
+      - name: Install rename
+        run: sudo apt-get update && sudo apt-get install -y rename  # rename 패키지 설치
+
+      - name: Rename bin files
+        run: |
+          echo "Renaming bin files with the environment name"
+          find .pio/build/*/*.bin -print -exec rename 's:/:-:g' {} \;
+          ls -la
+          rename 's/.pio-build-//' ./.pio-build-*.bin     
+          ls -la
+        
+          # rename 's/.pio-build-//' ./*.bin
+        #  echo "Renaming bin files with the environment name"
+        #  find .pio/build/*/*.bin -exec rename 's:/:-:g' {} \;
+        #  ls -l
+
+      - name: Create toDeploy directory
+        run: mkdir toDeploy
+
+      #- name: Remove .pio-build- prefix from bin files
+      #  run: |
+      #    rename 's/.pio-build-//' ./*.bin
+      #    ls -l
+
+      - name: Replace space with underscore in folder names
+        run: |
+          echo "Replacing space by _ in folder names"
+          find lib -type d -name "* *" | while read FNAME; do mv "$FNAME" "${FNAME// /_}"; done
+
+      - name: Zip libraries per board
+        run: |
+          echo "Zipping libraries per board"
+          if [ -d lib ]; then  # Check if the lib directory exists
+            for dir in lib/*/; do
+              if [ -d "$dir" ]; then  # Check if the subdirectory exists
+                zip -r "${dir%/}-libraries.zip" "$dir"
+                echo "Created zip: ${dir%/}-libraries.zip"
+              fi
+            done
+            # Ignore if no zip files were created, just move on
+            if compgen -G "lib/*.zip" > /dev/null; then
+              mv lib/*.zip toDeploy
+            else
+              echo "No zip files created in 'lib' directory."
+            fi
+          else
+            echo "No 'lib' directory found, skipping zip creation."
+          fi
+
+      - name: Remove unnecessary binaries and zips
+        run: |
+          ls -l
+          echo "Removing unnecessary binaries and zips"
+          rm -f *-all*.bin *-test*.bin *-test*.zip
+          ls -l
+      - name: Zip source code
+        run: |
+          echo "Zipping source code"
+          zip -r Sources.zip src
+          mv Sources.zip toDeploy
+          
+          echo "Current directory contents:"
+          ls -l
+          # Check if .bin files exist before moving
+          if ls *.bin 1> /dev/null 2>&1; then
+            mv *.bin toDeploy
+          else
+            echo "No .bin files found to move."
+          fi
+
+      - name: List toDeploy contents
+        run: ls -lA toDeploy
+
+      - name: Upload Release Assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: toDeploy/**
+          
+      - name: Finalize Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: toDeploy/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
