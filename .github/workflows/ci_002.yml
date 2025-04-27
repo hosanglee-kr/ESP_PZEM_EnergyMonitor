@@ -1,0 +1,147 @@
+# .github/workflows/pr.yml
+name: PR
+
+on:
+  pull_request:
+    branches: [main] # Pull Request가 main 브랜치를 대상으로 할 때 실행
+
+jobs:
+  # Step 1: platformio.ini에서 환경 목록 가져오기
+  get_environments:
+    runs-on: ubuntu-latest
+    # 수정: Job 출력이 read_output Step의 출력(envs)을 참조하도록 변경
+    outputs:
+      environments: ${{ steps.read_output.outputs.envs }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' # PlatformIO 실행에 필요한 Python 설정
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade platformio
+
+      - name: List PlatformIO environments
+        id: list_envs # 이 Step의 ID (파일에 출력)
+        
+        # platformio.ini 파일을 읽어 [env:...] 섹션 이름들을 JSON 배열로 출력
+        # 이 출력은 다음 Step에서 파일로 저장되고 Job 출력으로 설정됨
+        run: |
+          python -c "
+          import configparser
+          import json
+          import sys
+          config = configparser.ConfigParser()
+          # platformio.ini 파일 경로를 정확하게 지정 (기본: 저장소 루트)
+          # 만약 platformio.ini가 하위 디렉토리에 있다면 경로 수정 필요 (예: 'firmware/platformio.ini')
+          config.read('platformio.ini')
+          
+          envs = []
+          for section in config.sections():
+              if section.startswith('env:'):
+                  # 'env:' 접두사를 제외한 환경 이름만 추출
+                  envs.append(section.split(':', 1)[1])
+          # GitHub Actions matrix가 인식할 수 있는 JSON 배열 형태로 출력
+          print(json.dumps(envs))
+          " > envs.json # 출력을 envs.json 파일로 저장
+        shell: bash # bash 쉘을 사용하여 출력 리다이렉션
+
+      - name: Read environments to output
+        id: read_output # 이 Step의 ID (GITHUB_OUTPUT에 설정)
+        run: |
+          # envs.json 파일에서 JSON 배열을 읽어와 Job의 출력으로 설정
+          # 이 출력은 'build' Job의 matrix에서 사용됨
+          ENVS=$(<envs.json)
+          # GITHUB_OUTPUT에 step output 설정
+          echo "envs=${ENVS}" >> $GITHUB_OUTPUT # GITHUB_OUTPUT에 설정하여 Step 출력으로 만듦
+        shell: bash # bash 쉘 사용
+
+  # Step 2: 가져온 환경 목록을 사용하여 빌드 실행
+  build:
+    runs-on: ubuntu-latest
+    needs: get_environments # 이 Job은 get_environments Job이 먼저 완료되어야 함
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # get_environments Job의 출력에서 환경 목록을 가져와 matrix로 사용
+        environments: ${{ fromJson(needs.get_environments.outputs.environments) }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 캐싱 및 Python/PlatformIO 설정 단계는 get_environments Job과 동일하게 유지
+      # (개별 Job은 독립적으로 실행되므로 종속성 설정을 해줘야 함)
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade platformio
+
+      # PlatformIO 실행 및 빌드 아티팩트 업로드 단계
+      - name: Run PlatformIO build for ${{ matrix.environments }}
+        env:
+          VERSION: "0.0.${{ github.event.number }}" # 환경 변수 설정 (PR 번호 사용)
+        run: pio run -e ${{ matrix.environments }}
+
+      # LittleFS 파일 시스템 이미지 빌드 (오류 발생해도 계속)
+      - name: Build filesystem image for ${{ matrix.environments }}
+        env:
+          VERSION: "0.0.${{ github.event.number }}"
+        run: pio run -e ${{ matrix.environments }} --target buildfs
+        continue-on-error: true # 파일 시스템 빌드 실패해도 다음 단계 진행
+
+      # 빌드 결과 아티팩트 업로드 (펌웨어, littlefs, 파티션, 부트로더)
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.environments }}-firmware.bin
+          path: .pio/build/${{ matrix.environments }}/firmware*.bin # *를 사용하여 정확한 파일명 매칭 (예: firmware.bin, firmware_tasmota.bin 등)
+
+      - name: Upload littlefs artifact
+        # littlefs.bin 파일이 존재하는 경우에만 업로드 (upload-artifact는 파일이 없으면 경고만 출력하고 스킵)
+        # continue-on-error: true 설정된 buildfs step 때문에 파일이 없을 수도 있으므로 이대로 두는 것이 안전
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.environments }}-littlefs.bin
+          path: .pio/build/${{ matrix.environments }}/littlefs.bin
+          # 파일 존재 여부 추가 체크가 필요하면 조건 추가 가능 (예: if: success() && steps.build_fs.outcome == 'success')
+          # 현재 if: success() || failure() 조건은 이 step이 항상 실행되도록 함. path에 파일이 없으면 업로드는 안 됨.
+
+      - name: Upload partitions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.environments }}-partitions.bin
+          path: .pio/build/${{ matrix.environments }}/partitions.bin
+
+      - name: Upload bootloader artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.environments }}-bootloader.bin
+          path: .pio/build/${{ matrix.environments }}/bootloader.bin
